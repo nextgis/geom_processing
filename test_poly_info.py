@@ -7,6 +7,8 @@ class TestPolyInfo(unittest.TestCase):
         self.holey_polygon = 'Polygon((0 0, 4 0, 4 4, 0 4, 0 0), (1 1, 3 1, 3 3, 1 3, 1 1))'
         self.multipolygon = 'MultiPolygon(((0 0, 1 0, 1 1, 0 1, 0 0)),((3 0, 7 3, 4 7, 0 4, 3 0)))'
         self.linestring = 'LineString(0 0, 1 2, 3 4)'
+        self.not_polygon = 'Polygon((1 1, 4 3, 0 0))'
+        self.not_wkt = 'Poly'
 
     def test_simple_polygon_area(self):
         self.assertEqual(poly_info(self.simple_polygon)["area"], 1)
@@ -56,6 +58,16 @@ class TestPolyInfo(unittest.TestCase):
     def test_lisestring(self):
         with self.assertRaises(ValueError) as context:
             poly_info(self.linestring)
+            self.assertEquals(context.exception, ValueError)
+            
+    def test_not_polygon(self):
+        with self.assertRaises(ValueError) as context:
+            poly_info(self.not_polygon)
+            self.assertEquals(context.exception, ValueError)
+            
+    def test_not_wkt(self):
+        with self.assertRaises(ValueError) as context:
+            poly_info(self.not_wkt)
             self.assertEquals(context.exception, ValueError)
            
 
