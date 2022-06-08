@@ -1,5 +1,5 @@
 import unittest
-from poly_info import poly_info
+from src.poly_info import poly_info
 
 class TestPolyInfo(unittest.TestCase):
     def setUp(self):
