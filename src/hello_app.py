@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 import json
 from poly_info import poly_info
 
@@ -15,9 +15,12 @@ def handle_geom():
     if (content_type == 'application/json'):
         try:
             wkt1 = request.json["wkt1"]
-            return json.dumps(poly_info(wkt1))
-        except Exception as e:
-            return str(e)
+            return Response(response = json.dumps(poly_info(wkt1)), 
+                            status = 200) 
+        except ValueError as e:
+            return Response('ValueError: ' + str(e), status = 400)
+        except KeyError as e:
+            return Response('KeyError: ' + str(e), status = 400)
     else:
-        return 'Content-Type not supported!'
+        return Response('Content-Type not supported!', status = 400)
 
