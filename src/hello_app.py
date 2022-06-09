@@ -9,7 +9,7 @@ def hello_world():
     return "<p>Hello, World!</p>"
     
     
-@app.route("/handler", methods=['POST'])
+@app.route("/GetPolyParams", methods=['POST'])
 def handle_geom():
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
@@ -20,3 +20,4 @@ def handle_geom():
             return str(e)
     else:
         return 'Content-Type not supported!'
+        

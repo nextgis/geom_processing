@@ -17,7 +17,7 @@ class TestPolyInfo(unittest.TestCase):
         self.assertEqual(poly_info(self.simple_polygon)["perimetr"], 4)
         
     def test_simple_polygon_bb(self):
-        bb_test = poly_info(self.simple_polygon)["BoundBox"]
+        bb_test = poly_info(self.simple_polygon)["bound_box"]
         bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, '+ \
                      '0.0000000000000000 1.0000000000000000, '+ \
                      '1.0000000000000000 1.0000000000000000, '+ \
@@ -32,7 +32,7 @@ class TestPolyInfo(unittest.TestCase):
         self.assertEqual(poly_info(self.holey_polygon)["perimetr"], 24)
         
     def test_holey_polygon_bb(self):
-        bb_test = poly_info(self.holey_polygon)["BoundBox"]
+        bb_test = poly_info(self.holey_polygon)["bound_box"]
         bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, '+ \
                      '0.0000000000000000 4.0000000000000000, '+ \
                      '4.0000000000000000 4.0000000000000000, '+ \
@@ -47,7 +47,7 @@ class TestPolyInfo(unittest.TestCase):
         self.assertEqual(poly_info(self.multipolygon)["perimetr"], 24)
 
     def test_multipolygon_bb(self):
-        bb_test = poly_info(self.multipolygon)["BoundBox"]
+        bb_test = poly_info(self.multipolygon)["bound_box"]
         bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, '+ \
                      '0.0000000000000000 7.0000000000000000, '+ \
                      '7.0000000000000000 7.0000000000000000, '+ \
@@ -73,3 +73,4 @@ class TestPolyInfo(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    

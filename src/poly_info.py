@@ -10,11 +10,12 @@ def poly_info(obj_wkt):
             raise ValueError("geom_type is not Polygon or MultiPolygon")
         obj_info = {"area" : obj_geom.area,
                     "perimetr" : obj_geom.length,
-                    "BoundBox" : wkt.dumps(bb_polygon(obj_geom.bounds))}
+                    "bound_box" : wkt.dumps(get_bb_polygon(obj_geom.bounds))}
         return obj_info
     except WKTReadingError as e:
         raise ValueError(str(e))
 
-def bb_polygon(bounds):
+def get_bb_polygon(bounds):
     v = [(bounds[x], bounds[y]) for (x, y) in [(0, 1), (0, 3), (2, 3), (2, 1)]]
     return Polygon(v)
+    
