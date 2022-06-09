@@ -20,4 +20,4 @@ def handle_geom():
             return str(e)
     else:
         return 'Content-Type not supported!'
-        
+
