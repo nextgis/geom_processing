@@ -15,4 +15,4 @@ def combine(mp1_wkt, mp2_wkt, **kwargs):
         return to_return.wkt
     except WKTReadingError as e:
         raise ValueError(str(e))  
-        
+
