@@ -1,6 +1,7 @@
 from flask import Flask, request, Response
 import json
-from poly_info import poly_info
+from src.poly_info import poly_info
+from src.combining import combine
 
 app = Flask(__name__)
 
@@ -24,3 +25,20 @@ def handle_geom():
     else:
         return Response('Content-Type not supported!', status = 400)
 
+
+@app.route("/CombineMultiPolygons", methods=['POST'])
+def combine_polygons():
+    content_type = request.headers.get('Content-Type')
+    if (content_type == 'application/json'):
+        try:
+            req = request.json
+            mp1_wkt = req["wkt1"]
+            mp2_wkt = req["wkt2"]
+            union_wkt = combine(mp1_wkt, mp2_wkt)
+            return Response(response = f'{{"union_wkt" : "{union_wkt}"}}', status = 200) 
+        except ValueError as e:
+            return Response('ValueError: ' + str(e), status = 400)
+        except KeyError as e:
+            return Response('KeyError: ' + str(e), status = 400)
+    else:
+        return Response('Content-Type not supported!', status = 400)
