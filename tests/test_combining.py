@@ -1,14 +1,15 @@
 import unittest
+from shapely import wkt
 from src.combining import combine
 
 class TestPolyInfo(unittest.TestCase):
     def setUp(self):
-        self.simple_triangle_1 = 'MultiPolygon(((0 0, 1 0, 1 1, 0 0)))'
-        self.simple_triangle_2 = 'MultiPolygon(((0 0, 1 1, 0 1, 0 0)))'
-        self.mp_1 = "MultiPolygon(((0 0, 1 0, 1 1, 0 1, 0 0)),((2 0, 3 0, 3 1, 2 1, 2 0)))"
-        self.mp_2 = "MultiPolygon(((1 0, 2 0, 2 1, 1 1, 1 0)))"
-        self.two_sq_1 = "MultiPolygon(((0 0, 1 0, 1 1, 0 1, 0 0)), ((3 0, 4 0, 4 1, 3 1, 3 0)))"
-        self.two_sq_2 = "MultiPolygon(((1 0, 2 0, 2 1, 1 1, 1 0)),((4 0, 5 0, 5 1, 4 1, 4 0)))"
+        self.simple_triangle_1 = wkt.loads('MultiPolygon(((0 0, 1 0, 1 1, 0 0)))')
+        self.simple_triangle_2 = wkt.loads('MultiPolygon(((0 0, 1 1, 0 1, 0 0)))')
+        self.mp_1 = wkt.loads("MultiPolygon(((0 0, 1 0, 1 1, 0 1, 0 0)),((2 0, 3 0, 3 1, 2 1, 2 0)))")
+        self.mp_2 = wkt.loads("MultiPolygon(((1 0, 2 0, 2 1, 1 1, 1 0)))")
+        self.two_sq_1 = wkt.loads("MultiPolygon(((0 0, 1 0, 1 1, 0 1, 0 0)), ((3 0, 4 0, 4 1, 3 1, 3 0)))")
+        self.two_sq_2 = wkt.loads("MultiPolygon(((1 0, 2 0, 2 1, 1 1, 1 0)),((4 0, 5 0, 5 1, 4 1, 4 0)))")
 
     def test_simple_combining(self):
         res = combine(self.simple_triangle_1, self.simple_triangle_2)
