@@ -45,7 +45,8 @@ def combine_polygons():
             req = request.json
             geom_1 = convert_to_mp(req["wkt1"])
             geom_2 = convert_to_mp(req["wkt2"])
-            union_wkt = combine(geom_1, geom_2)
+            union = combine(geom_1, geom_2)
+            union_wkt = union.wkt
             return {'union_wkt' : union_wkt}, 200
         except ValueError as e:
             return Response('ValueError: ' + str(e), status = 400)
