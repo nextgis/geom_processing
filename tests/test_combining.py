@@ -1,6 +1,6 @@
 import unittest
 from shapely import wkt
-from src.combining import combine
+from src.combining import combine, fill_holes
 
 class TestPolyInfo(unittest.TestCase):
     def setUp(self):
@@ -10,6 +10,8 @@ class TestPolyInfo(unittest.TestCase):
         self.mp_2 = wkt.loads("MultiPolygon(((1 0, 2 0, 2 1, 1 1, 1 0)))")
         self.two_sq_1 = wkt.loads("MultiPolygon(((0 0, 1 0, 1 1, 0 1, 0 0)), ((3 0, 4 0, 4 1, 3 1, 3 0)))")
         self.two_sq_2 = wkt.loads("MultiPolygon(((1 0, 2 0, 2 1, 1 1, 1 0)),((4 0, 5 0, 5 1, 4 1, 4 0)))")
+        
+        self.sq_with_holes = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0),(0.5 0.5, 0.5 1.5, 1.5 0.5, 0.5 0.5),(2 2, 2.5 2, 2 2.5, 2 2)))')
 
     def test_simple_combining(self):
         res = combine(self.simple_triangle_1, self.simple_triangle_2)
@@ -25,6 +27,24 @@ class TestPolyInfo(unittest.TestCase):
         res = combine(self.two_sq_1, self.two_sq_2)
         correct = wkt.loads('MULTIPOLYGON (((0 1, 1 1, 2 1, 2 0, 1 0, 0 0, 0 1)), ((3 1, 4 1, 5 1, 5 0, 4 0, 3 0, 3 1)))')
         self.assertTrue(res.equals(correct)) 
+        
+    def test_holes_1(self):
+        hole_area = 0.1
+        res = fill_holes(self.sq_with_holes, hole_area)
+        correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0),(0.5 0.5, 0.5 1.5, 1.5 0.5, 0.5 0.5),(2 2, 2.5 2, 2 2.5, 2 2)))')
+        self.assertTrue(res.equals(correct))
+        
+    def test_holes_2(self):
+        hole_area = 0.4
+        res = fill_holes(self.sq_with_holes, hole_area)
+        correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0),(0.5 0.5, 0.5 1.5, 1.5 0.5, 0.5 0.5)))')
+        self.assertTrue(res.equals(correct))
+        
+    def test_holes_3(self):
+        hole_area = 0.7
+        res = fill_holes(self.sq_with_holes, hole_area)
+        correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0)))')
+        self.assertTrue(res.equals(correct))
         
 
 if __name__ == '__main__':
