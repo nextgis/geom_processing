@@ -79,7 +79,6 @@ class TestPolyInfo(unittest.TestCase):
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
         
-    
     def test_cross_hole_1(self):
         hole_area = 2
         res = combine(self.with_hole, self.for_cross_2, hole_area)
@@ -91,11 +90,11 @@ class TestPolyInfo(unittest.TestCase):
     def test_cross_hole_2(self):
         hole_area = 4
         res = combine(self.with_hole, self.for_cross_2, hole_area)
-        correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 3, 5 2, 5 0, 0 0)))"
+        correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 3, 5 2, 5 0, 0 0)," +\
+                      "(1 1, 4 1, 4 2, 1 2, 1 1),(1 3, 4 3, 4 4, 1 4, 1 3)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
-    
     def test_cross_hole_3(self):
         hole_area = 6
         res = combine(self.with_hole, self.for_cross_3, hole_area)
@@ -104,11 +103,11 @@ class TestPolyInfo(unittest.TestCase):
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
     
-    
     def test_cross_hole_4(self):
         hole_area = 8
         res = combine(self.with_hole, self.for_cross_3, hole_area)
-        correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 0, 0 0)))"
+        correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 0, 0 0)," +\
+                      "(1 1, 1 2, 3 2, 3 3, 1 3, 1 4, 4 4, 4 1, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
         

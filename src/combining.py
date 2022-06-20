@@ -7,7 +7,7 @@ from shapely.ops import unary_union
 
 def in_geoms(item, geoms):
     for geom in geoms:
-        if geom.equals(item):
+        if item.covered_by(geom):
             return 1
     return 0
 
@@ -16,7 +16,8 @@ def fill_holes(geom, hole_area, init_holes):
     poly_tree = [{"exterior" : item.exterior, "interiors" : item.interiors} for item in geom.geoms]
     for item in poly_tree:
         item["new_interiors"] = [j for j in item["interiors"] \
-                                    if Polygon(j).area >= hole_area or in_geoms(j, init_holes)]
+                                    if Polygon(j).area >= hole_area or \
+                                    in_geoms(Polygon(j), [Polygon(ih) for ih in init_holes])]
     new_polygons = [Polygon(j["exterior"], j["new_interiors"]) for j in poly_tree]
     new_mp = MultiPolygon(new_polygons)
     return new_mp
