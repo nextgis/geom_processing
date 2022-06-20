@@ -4,10 +4,19 @@ from shapely.errors import WKTReadingError
 
 from shapely.ops import unary_union
 
-def fill_holes(geom, hole_area):
+
+def in_geoms(item, geoms):
+    for geom in geoms:
+        if geom.equals(item):
+            return 1
+    return 0
+
+
+def fill_holes(geom, hole_area, init_holes):
     poly_tree = [{"exterior" : item.exterior, "interiors" : item.interiors} for item in geom.geoms]
     for item in poly_tree:
-        item["new_interiors"] = [j for j in item["interiors"] if Polygon(j).area >= hole_area]
+        item["new_interiors"] = [j for j in item["interiors"] \
+                                    if Polygon(j).area >= hole_area or in_geoms(j, init_holes)]
     new_polygons = [Polygon(j["exterior"], j["new_interiors"]) for j in poly_tree]
     new_mp = MultiPolygon(new_polygons)
     return new_mp
@@ -21,10 +30,16 @@ def prepare_mp(geom):
     else:
         raise ValueError("Result is not MultiPolygon : " + to_return.geom_type)
 
+
+def get_init_holes(mp):
+    groups_holes = [item.interiors for item in mp.geoms]
+    return [item for group in groups_holes for item in group]
+
  
 def combine(geom_1, geom_2, hole_area=0, **kwargs):    
     union = unary_union([geom_1, geom_2])
     mp = prepare_mp(union)
-    filled = fill_holes(mp, hole_area)
+    init_holes = get_init_holes(geom_1) + get_init_holes(geom_2)
+    filled = fill_holes(mp, hole_area, init_holes)
     return filled
     
