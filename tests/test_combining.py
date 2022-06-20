@@ -13,6 +13,9 @@ class TestPolyInfo(unittest.TestCase):
         
         self.sq_with_holes = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0),(0.5 0.5, 0.5 1.5, 1.5 0.5, 0.5 0.5),(2 2, 2.5 2, 2 2.5, 2 2)))')
 
+        self.mp_holed = wkt.loads("MultiPolygon(((0 0, 1 4, 3 4, 4 0, 2 2, 0 0),(1.75 2.75, 2.25 2.75, 2.25 3.25, 1.75 3.25, 1.75 2.75)))")
+        self.mp_for_union = wkt.loads("MultiPolygon(((0 0, 0 1, 4 1, 4 0, 0 0)))")
+
     def test_simple_combining(self):
         res = combine(self.simple_triangle_1, self.simple_triangle_2)
         correct = wkt.loads('MULTIPOLYGON (((1 0, 0 0, 0 1, 1 1, 1 0)))')
@@ -45,7 +48,28 @@ class TestPolyInfo(unittest.TestCase):
         res = fill_holes(self.sq_with_holes, hole_area)
         correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0)))')
         self.assertTrue(res.equals(correct))
+
+    def test_union_holes_1(self):
+        hole_area = 0.1
+        res = combine(self.mp_holed, self.mp_for_union, hole_area)
+        correct_wkt = "MultiPolygon(((0 0, 0 1, 0.25 1, 1 4, 3 4, 3.75 1, 4 1, 4 0, 0 0)," +\
+                      "(1 1, 2 2, 3 1, 1 1),(1.75 2.75, 2.25 2.75, 2.25 3.25, 1.75 3.25, 1.75 2.75)))"
+        correct = wkt.loads(correct_wkt)
+        self.assertTrue(res.equals(correct))
         
+    def test_union_holes_2(self):
+        hole_area = 0.6
+        res = combine(self.mp_holed, self.mp_for_union, hole_area)
+        correct_wkt = "MultiPolygon(((0 0, 0 1, 0.25 1, 1 4, 3 4, 3.75 1, 4 1, 4 0, 0 0),(1 1, 2 2, 3 1, 1 1)))"
+        correct = wkt.loads(correct_wkt)
+        self.assertTrue(res.equals(correct))
+
+    def test_union_holes_3(self):
+        hole_area = 1.1
+        res = combine(self.mp_holed, self.mp_for_union, hole_area)
+        correct_wkt = "MultiPolygon(((0 0, 0 1, 0.25 1, 1 4, 3 4, 3.75 1, 4 1, 4 0, 0 0)))"
+        correct = wkt.loads(correct_wkt)
+        self.assertTrue(res.equals(correct))
 
 if __name__ == '__main__':
     unittest.main()
