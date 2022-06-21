@@ -4,10 +4,13 @@ from shapely.errors import WKTReadingError
 
 from shapely.ops import unary_union
 
+EPS = 1e-15
 
 def in_geoms(item, geoms):
     for geom in geoms:
-        if item.covered_by(geom):
+        if geom.contains(item):
+            return 1
+        elif geom.buffer(EPS).contains(item):
             return 1
     return 0
 
@@ -17,7 +20,7 @@ def fill_holes(geom, hole_area, init_holes):
     for item in poly_tree:
         item["new_interiors"] = [j for j in item["interiors"] \
                                     if Polygon(j).area >= hole_area or \
-                                    in_geoms(Polygon(j), [Polygon(ih) for ih in init_holes])]
+                                       in_geoms(Polygon(j), [Polygon(ih) for ih in init_holes])]
     new_polygons = [Polygon(j["exterior"], j["new_interiors"]) for j in poly_tree]
     new_mp = MultiPolygon(new_polygons)
     return new_mp
