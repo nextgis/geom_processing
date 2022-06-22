@@ -14,12 +14,15 @@ def in_geoms(item, geoms):
 
 
 def fill_holes(geom, hole_area, init_holes):
-    poly_tree = [{"exterior": item.exterior, "interiors": item.interiors} for item in geom.geoms]
-    for item in poly_tree:
-        item["new_interiors"] = [j for j in item["interiors"]
-                                 if Polygon(j).area >= hole_area or
-                                 in_geoms(Polygon(j), [Polygon(ih) for ih in init_holes])]
-    new_polygons = [Polygon(j["exterior"], j["new_interiors"]) for j in poly_tree]
+    ih_poly = [Polygon(ih) for ih in init_holes]
+    new_polygons = []
+    for item in geom.geoms:
+        exterior = item.exterior
+        interiors = item.interiors
+        new_interiors = [j for j in interiors
+                         if Polygon(j).area >= hole_area or
+                         in_geoms(Polygon(j), ih_poly)]
+        new_polygons += [Polygon(exterior, new_interiors)]
     new_mp = MultiPolygon(new_polygons)
     return new_mp
 
