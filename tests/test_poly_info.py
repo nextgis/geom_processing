@@ -1,6 +1,7 @@
 import unittest
 from src.poly_info import poly_info
 
+
 class TestPolyInfo(unittest.TestCase):
     def setUp(self):
         self.simple_polygon = 'Polygon((0 0, 1 0, 1 1, 0 1, 0 0))'
@@ -18,11 +19,11 @@ class TestPolyInfo(unittest.TestCase):
         
     def test_simple_polygon_bb(self):
         bb_test = poly_info(self.simple_polygon)["bound_box"]
-        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, '+ \
-                     '0.0000000000000000 1.0000000000000000, '+ \
-                     '1.0000000000000000 1.0000000000000000, '+ \
-                     '1.0000000000000000 0.0000000000000000, '+ \
-                     '0.0000000000000000 0.0000000000000000))'
+        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' \
+                     + '0.0000000000000000 1.0000000000000000, ' \
+                     + '1.0000000000000000 1.0000000000000000, ' \
+                     + '1.0000000000000000 0.0000000000000000, ' \
+                     + '0.0000000000000000 0.0000000000000000))'
         self.assertEquals(bb_test, bb_correct)
         
     def test_holey_polygon_area(self):
@@ -33,12 +34,12 @@ class TestPolyInfo(unittest.TestCase):
         
     def test_holey_polygon_bb(self):
         bb_test = poly_info(self.holey_polygon)["bound_box"]
-        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, '+ \
-                     '0.0000000000000000 4.0000000000000000, '+ \
-                     '4.0000000000000000 4.0000000000000000, '+ \
-                     '4.0000000000000000 0.0000000000000000, '+ \
-                     '0.0000000000000000 0.0000000000000000))'
-        self.assertEquals(bb_test, bb_correct)
+        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' \
+                     + '0.0000000000000000 4.0000000000000000, ' \
+                     + '4.0000000000000000 4.0000000000000000, ' \
+                     + '4.0000000000000000 0.0000000000000000, ' \
+                     + '0.0000000000000000 0.0000000000000000))'
+        self.assertEqual(bb_test, bb_correct)
         
     def test_multipolygon_area(self):
         self.assertEqual(poly_info(self.multipolygon)["area"], 26)
@@ -48,29 +49,28 @@ class TestPolyInfo(unittest.TestCase):
 
     def test_multipolygon_bb(self):
         bb_test = poly_info(self.multipolygon)["bound_box"]
-        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, '+ \
-                     '0.0000000000000000 7.0000000000000000, '+ \
-                     '7.0000000000000000 7.0000000000000000, '+ \
-                     '7.0000000000000000 0.0000000000000000, '+ \
+        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' + \
+                     '0.0000000000000000 7.0000000000000000, ' + \
+                     '7.0000000000000000 7.0000000000000000, ' + \
+                     '7.0000000000000000 0.0000000000000000, ' + \
                      '0.0000000000000000 0.0000000000000000))'
         self.assertEquals(bb_test, bb_correct)
-        
+
     def test_lisestring(self):
         with self.assertRaises(ValueError) as context:
             poly_info(self.linestring)
             self.assertEquals(context.exception, ValueError)
-            
+
     def test_not_polygon(self):
         with self.assertRaises(ValueError) as context:
             poly_info(self.not_polygon)
             self.assertEquals(context.exception, ValueError)
-            
+
     def test_not_wkt(self):
         with self.assertRaises(ValueError) as context:
             poly_info(self.not_wkt)
             self.assertEquals(context.exception, ValueError)
-           
+
 
 if __name__ == '__main__':
     unittest.main()
-
