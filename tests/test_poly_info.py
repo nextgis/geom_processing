@@ -13,10 +13,10 @@ class TestPolyInfo(unittest.TestCase):
 
     def test_simple_polygon_area(self):
         self.assertEqual(poly_info(self.simple_polygon)["area"], 1)
-        
+
     def test_simple_polygon_perimetr(self):
         self.assertEqual(poly_info(self.simple_polygon)["perimetr"], 4)
-        
+
     def test_simple_polygon_bb(self):
         bb_test = poly_info(self.simple_polygon)["bound_box"]
         bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' \
@@ -25,13 +25,13 @@ class TestPolyInfo(unittest.TestCase):
                      + '1.0000000000000000 0.0000000000000000, ' \
                      + '0.0000000000000000 0.0000000000000000))'
         self.assertEquals(bb_test, bb_correct)
-        
+
     def test_holey_polygon_area(self):
         self.assertEqual(poly_info(self.holey_polygon)["area"], 12)
-        
+
     def test_holey_polygon_perimetr(self):
         self.assertEqual(poly_info(self.holey_polygon)["perimetr"], 24)
-        
+
     def test_holey_polygon_bb(self):
         bb_test = poly_info(self.holey_polygon)["bound_box"]
         bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' \
@@ -40,20 +40,20 @@ class TestPolyInfo(unittest.TestCase):
                      + '4.0000000000000000 0.0000000000000000, ' \
                      + '0.0000000000000000 0.0000000000000000))'
         self.assertEqual(bb_test, bb_correct)
-        
+
     def test_multipolygon_area(self):
         self.assertEqual(poly_info(self.multipolygon)["area"], 26)
-        
+
     def test_multipolygon_perimetr(self):
         self.assertEqual(poly_info(self.multipolygon)["perimetr"], 24)
 
     def test_multipolygon_bb(self):
         bb_test = poly_info(self.multipolygon)["bound_box"]
-        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' + \
-                     '0.0000000000000000 7.0000000000000000, ' + \
-                     '7.0000000000000000 7.0000000000000000, ' + \
-                     '7.0000000000000000 0.0000000000000000, ' + \
-                     '0.0000000000000000 0.0000000000000000))'
+        bb_correct = 'POLYGON ((0.0000000000000000 0.0000000000000000, ' \
+                     + '0.0000000000000000 7.0000000000000000, ' \
+                     + '7.0000000000000000 7.0000000000000000, ' \
+                     + '7.0000000000000000 0.0000000000000000, ' \
+                     + '0.0000000000000000 0.0000000000000000))'
         self.assertEquals(bb_test, bb_correct)
 
     def test_lisestring(self):

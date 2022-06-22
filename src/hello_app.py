@@ -22,8 +22,8 @@ def convert_to_mp(input_wkt):
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
-    
-    
+
+
 @app.route("/GetPolyParams", methods=['POST'])
 def handle_geom():
     content_type = request.headers.get('Content-Type')

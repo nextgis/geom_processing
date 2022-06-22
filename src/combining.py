@@ -22,12 +22,12 @@ def fill_holes(geom, hole_area, init_holes):
     new_polygons = [Polygon(j["exterior"], j["new_interiors"]) for j in poly_tree]
     new_mp = MultiPolygon(new_polygons)
     return new_mp
- 
+
 
 def prepare_mp(geom):
     if geom.geom_type == "Polygon":
         return MultiPolygon([geom])
-    elif geom.geom_type == "MultiPolygon":    
+    elif geom.geom_type == "MultiPolygon":
         return geom
     else:
         raise ValueError("Result is not MultiPolygon : " + geom.geom_type)
@@ -37,8 +37,8 @@ def get_init_holes(mp):
     groups_holes = [item.interiors for item in mp.geoms]
     return [item for group in groups_holes for item in group]
 
- 
-def combine(geom_1, geom_2, hole_area=0, **kwargs):    
+
+def combine(geom_1, geom_2, hole_area=0, **kwargs):
     union = unary_union([geom_1, geom_2])
     mp = prepare_mp(union)
     init_holes = get_init_holes(geom_1) + get_init_holes(geom_2)
