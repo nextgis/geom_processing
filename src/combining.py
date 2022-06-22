@@ -44,3 +44,4 @@ def combine(geom_1, geom_2, hole_area=0, **kwargs):
     init_holes = get_init_holes(geom_1) + get_init_holes(geom_2)
     filled = fill_holes(mp, hole_area, init_holes)
     return filled
+

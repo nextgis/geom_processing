@@ -19,3 +19,4 @@ def poly_info(obj_wkt):
 def get_bb_polygon(bounds):
     v = [(bounds[x], bounds[y]) for (x, y) in [(0, 1), (0, 3), (2, 3), (2, 1)]]
     return Polygon(v)
+

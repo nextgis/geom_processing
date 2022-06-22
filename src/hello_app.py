@@ -58,3 +58,4 @@ def combine_polygons():
             return Response('KeyError: ' + str(e), status=400)
     else:
         return Response('Content-Type not supported!', status=400)
+
