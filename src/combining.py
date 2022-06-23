@@ -37,14 +37,14 @@ def prepare_mp(geom):
 
 
 def get_init_holes(mp):
-    groups_holes = [item.interiors for item in mp.geoms]
-    return [item for group in groups_holes for item in group]
+    polygones_holes = [poly.interiors for poly in mp.geoms]
+    return [hole for polygon in polygones_holes for hole in polygon]
 
 
-def combine(geom_1, geom_2, hole_area=0, **kwargs):
-    union = unary_union([geom_1, geom_2])
+def combine(geoms, hole_area=0, **kwargs):
+    union = unary_union(geoms)
     mp = prepare_mp(union)
-    init_holes = get_init_holes(geom_1) + get_init_holes(geom_2)
+    init_holes = [hole for geom in geoms for hole in get_init_holes(geom)]
     filled = fill_holes(mp, hole_area, init_holes)
     return filled
 
