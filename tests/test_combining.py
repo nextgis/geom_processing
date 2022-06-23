@@ -51,106 +51,92 @@ class TestPolyInfo(unittest.TestCase):
         self.assertTrue(res.equals(correct)) 
 
     def test_holes_1(self):
-        hole_area = 0.1
-        res = fill_holes(self.sq_with_holes, hole_area, [])
+        res = fill_holes(self.sq_with_holes, hole_area=0.1, init_holes=[])
         correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0),'
                             '(0.5 0.5, 0.5 1.5, 1.5 0.5, 0.5 0.5),(2 2, 2.5 2, 2 2.5, 2 2)))')
         self.assertTrue(res.equals(correct))
 
     def test_holes_2(self):
-        hole_area = 0.4
-        res = fill_holes(self.sq_with_holes, hole_area, [])
+        res = fill_holes(self.sq_with_holes, hole_area=0.4, init_holes=[])
         correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0),(0.5 0.5, 0.5 1.5, 1.5 0.5, 0.5 0.5)))')
         self.assertTrue(res.equals(correct))
 
     def test_holes_3(self):
-        hole_area = 0.7
-        res = fill_holes(self.sq_with_holes, hole_area, [])
+        res = fill_holes(self.sq_with_holes, hole_area=0.7, init_holes=[])
         correct = wkt.loads('MultiPolygon(((0 0, 3 0, 3 3, 0 3, 0 0)))')
         self.assertTrue(res.equals(correct))
 
     def test_union_holes_1(self):
-        hole_area = 0.1
-        res = combine(geoms=[self.mp_holed, self.mp_for_union], hole_area=hole_area)
+        res = combine(geoms=[self.mp_holed, self.mp_for_union], hole_area=0.1)
         correct_wkt = "MultiPolygon(((0 0, 0 1, 0.25 1, 1 4, 3 4, 3.75 1, 4 1, 4 0, 0 0)," \
                       + "(1 1, 2 2, 3 1, 1 1),(1.75 2.75, 2.25 2.75, 2.25 3.25, 1.75 3.25, 1.75 2.75)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_union_holes_2(self):
-        hole_area = 0.6
-        res = combine(geoms=[self.mp_holed, self.mp_for_union], hole_area=hole_area)
+        res = combine(geoms=[self.mp_holed, self.mp_for_union], hole_area=0.6)
         correct_wkt = "MultiPolygon(((0 0, 0 1, 0.25 1, 1 4, 3 4, 3.75 1, 4 1, 4 0, 0 0)," \
                       + "(1 1, 2 2, 3 1, 1 1),(1.75 2.75, 2.25 2.75, 2.25 3.25, 1.75 3.25, 1.75 2.75)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_union_holes_3(self):
-        hole_area = 1.1
-        res = combine(geoms=[self.mp_holed, self.mp_for_union], hole_area=hole_area)
+        res = combine(geoms=[self.mp_holed, self.mp_for_union], hole_area=1.1)
         correct_wkt = "MultiPolygon(((0 0, 0 1, 0.25 1, 1 4, 3 4, 3.75 1, 4 1, 4 0, 0 0)," \
                       + "(1.75 2.75, 2.25 2.75, 2.25 3.25, 1.75 3.25, 1.75 2.75)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_cross_hole_1(self):
-        hole_area = 2
-        res = combine(geoms=[self.with_hole, self.for_cross_2], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_cross_2], hole_area=2)
         correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 3, 5 2, 5 0, 0 0)," \
                       + "(1 1, 4 1, 4 2, 1 2, 1 1),(1 3, 4 3, 4 4, 1 4, 1 3)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_cross_hole_2(self):
-        hole_area = 4
-        res = combine(geoms=[self.with_hole, self.for_cross_2], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_cross_2], hole_area=4)
         correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 3, 5 2, 5 0, 0 0)," \
                       + "(1 1, 4 1, 4 2, 1 2, 1 1),(1 3, 4 3, 4 4, 1 4, 1 3)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_cross_hole_3(self):
-        hole_area = 6
-        res = combine(geoms=[self.with_hole, self.for_cross_3], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_cross_3], hole_area=6)
         correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 0, 0 0)," \
                       + "(1 1, 1 2, 3 2, 3 3, 1 3, 1 4, 4 4, 4 1, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_cross_hole_4(self):
-        hole_area = 8
-        res = combine(geoms=[self.with_hole, self.for_cross_3], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_cross_3], hole_area=8)
         correct_wkt = "MultiPolygon(((0 0, 0 2, 0 3, 0 5, 5 5, 5 0, 0 0)," \
                       "(1 1, 1 2, 3 2, 3 3, 1 3, 1 4, 4 4, 4 1, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
         
     def test_touch_hole_1(self):
-        hole_area = 8
-        res = combine(geoms=[self.with_hole, self.for_touch_1], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_touch_1], hole_area=8)
         correct_wkt = "MultiPolygon(((0 0, 0 5, 5 5, 5 3, 6 3, 6 2, 5 2, 5 0, 0 0)," \
                       "(1 1, 4 1, 4 2, 4 3, 4 4, 1 4, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_touch_hole_2(self):
-        hole_area = 10
-        res = combine(geoms=[self.with_hole, self.for_touch_1], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_touch_1], hole_area=10)
         correct_wkt = "MultiPolygon(((0 0, 0 5, 5 5, 5 3, 6 3, 6 2, 5 2, 5 0, 0 0)," \
                       "(1 1, 4 1, 4 2, 4 3, 4 4, 1 4, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_touch_hole_3(self):
-        hole_area = 8
-        res = combine(geoms=[self.with_hole, self.for_touch_2], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_touch_2], hole_area=8)
         correct_wkt = "MultiPolygon(((0 0, 0 5, 5 5, 5 2.5, 6 3, 6 2, 5 2, 5 0, 0 0),(1 1, 4 1, 4 2, 4 4, 1 4, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
 
     def test_touch_hole_4(self):
-        hole_area = 10
-        res = combine(geoms=[self.with_hole, self.for_touch_2], hole_area=hole_area)
+        res = combine(geoms=[self.with_hole, self.for_touch_2], hole_area=10)
         correct_wkt = "MultiPolygon(((0 0, 0 5, 5 5, 5 2.5, 6 3, 6 2, 5 2, 5 0, 0 0),(1 1, 4 1, 4 2, 4 4, 1 4, 1 1)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
@@ -178,7 +164,6 @@ class TestPolyInfo(unittest.TestCase):
         correct_wkt = "MultiPolygon(((4 0, 2 0, 2 1, 1 1, 1 3, 2 3, 2 4, 4 4, 4 2, 4 0)," \
                       "(4 2, 3 3, 3 1, 4 2)))"
         correct = wkt.loads(correct_wkt)
-        print(res)
         self.assertTrue(res.equals(correct))
 
     def test_three_ud2(self):
@@ -193,6 +178,7 @@ class TestPolyInfo(unittest.TestCase):
                       "(3 3, 4 2, 3 1, 3 3)))"
         correct = wkt.loads(correct_wkt)
         self.assertTrue(res.equals(correct))
+
 
 if __name__ == '__main__':
     unittest.main()
