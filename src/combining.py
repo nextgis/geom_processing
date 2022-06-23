@@ -37,8 +37,8 @@ def prepare_mp(geom):
 
 
 def get_init_holes(mp):
-    polygones_holes = [poly.interiors for poly in mp.geoms]
-    return [hole for polygon in polygones_holes for hole in polygon]
+    polygons_holes = [poly.interiors for poly in mp.geoms]
+    return [hole for polygon in polygons_holes for hole in polygon]
 
 
 def combine(geoms, hole_area=0, **kwargs):

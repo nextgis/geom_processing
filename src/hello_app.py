@@ -46,10 +46,9 @@ def combine_polygons():
     if content_type == 'application/json':
         try:
             req = request.json
-            geom_1 = convert_to_mp(req["wkt1"])
-            geom_2 = convert_to_mp(req["wkt2"])
-            params = {k: req[k] for k in req.keys() if k not in ("wkt1", "wkt2")}
-            union = combine(geom_1, geom_2, **params)
+            geoms = [convert_to_mp(i_wkt) for i_wkt in req["wkts"]]
+            options = req["options"]
+            union = combine(geoms, **options)
             union_wkt = union.wkt
             return {'union_wkt': union_wkt}, 200
         except ValueError as e:
