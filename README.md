@@ -45,13 +45,13 @@ response=wkt, status_code=200
 
 ### Пример ответа:
 
-	("MultiPolygon(((4 0, 2 0, 2 1, 1 1, 1 3, 2 3, 2 4, 4 4, 4 2, 4 0)))", 200)
+	{"union_wkt": "MultiPolygon(((4 0, 2 0, 2 1, 1 1, 1 3, 2 3, 2 4, 4 4, 4 2, 4 0)))"}  
 
 
 ## Если что-то пошло не так:
 
-response=ValueError, status_code=400 - невозможно получить мультиполигоны из геометрий  
-response=KeyError, status_code=400 - отсутствует ключ к компоненту тела запроса  
+response=ValueError, status=400 - невозможно получить мультиполигоны из геометрий  
+response=KeyError, status=400 - отсутствует ключ к компоненту тела запроса  
 status_code=500 - ошибка сервера
 
 
