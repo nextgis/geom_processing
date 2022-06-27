@@ -5,21 +5,21 @@
 
 ## Структура запроса
 
-**http-method**: POST
-**url**: 'http://127.0.0.1:5000/CombineMultiPolygons'
+**http-method**: POST  
+**url**: 'http://127.0.0.1:5000/CombineMultiPolygons'  
 
-**Content-type** : application/json
+**Content-type** : application/json  
 
 
 ### Формат тела запроса
 
 {
-  "wkts": \[...\],
+  "wkts": \[...\],  
   "options": {...}
 }
 
-**wkts** - список геометрий мультиполигонов
-**options** - параметры объединения
+**wkts** - список геометрий мультиполигонов  
+**options** - параметры объединения  
 
 
 #### Параметры объединения:
@@ -30,9 +30,9 @@
 ### Пример запроса:
 
     { 
-		"wkts": \["Multipolygon(((1 1, 1 3, 3 3, 3 1, 1 1)))",
+		"wkts": ["Multipolygon(((1 1, 1 3, 3 3, 3 1, 1 1)))",
 				 "MultiPolygon(((2 2, 2 4, 4 4, 4 2, 3 3, 2 2)))",
-				 "MultiPolygon(((2 2, 3 1, 4 2, 4 0, 2 0, 2 2)))"\],
+				 "MultiPolygon(((2 2, 3 1, 4 2, 4 0, 2 0, 2 2)))"],
 		"options": {hole_area = 2}
     }
 
@@ -50,7 +50,7 @@ response=wkt, status_code=200
 
 ## Если что-то пошло не так:
 
-response=ValueError, status_code=400 - невозможно получить мультиполигоны из геометрий
+response=ValueError, status_code=400 - невозможно получить мультиполигоны из геометрий  
 response=KeyError, status_code=400 - отсутствует ключ к компоненту тела запроса
 status_code=500 - ошибка сервера
 
