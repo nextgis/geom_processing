@@ -1,4 +1,4 @@
-from shapely.geometry import LineString
+from shapely.geometry import LineString, Polygon
 
 
 def is_free(line, polygons):
@@ -9,31 +9,19 @@ def is_free(line, polygons):
     return to_return
 
 
-def get_edges(i, j_b, e_full):
-    """Returns edges of point i,j"""
-    return {e_full[edge] for edge in e_full.keys
-            if (i, j_b) in edge.key}
+def get_neighbours(edge, size1, size2):
+    p1 = edge[0]
+    v1_i = edge[1]
+    p2 = edge[2]
+    v2_i = edge[3]
+    return [(p1, (v1_i - 1) % size1, p2, (v2_i - 1) % size2),
+            (p1, (v1_i - 1) % size1, p2, (v2_i + 1) % size2),
+            (p1, (v1_i + 1) % size1, p2, (v2_i - 1) % size2),
+            (p1, (v1_i + 1) % size1, p2, (v2_i + 1) % size2)]
 
 
-def find_common(e_j_b, e_j_e):
-    """Finds vertexes, which can form a triangle with two other vertexes."""
-    common = []
-    for e_b in e_j_b:
-        for e_e in e_j_e:
-            inter = e_b.intersection(e_e)
-            if len(inter) == 1:
-                point = list(inter)[0]
-                common.append(point)
-    return common
-
-
-def get_adjacent(edge, trs):
-    """Returns triangles, which are adjacent for edge"""
-    adj = []
-    for tr in trs:
-        if edge.key <= tr.key:
-            adj.append(tr)
-    return adj
+def intersects_on_edge(line, poly):
+    pass
 
 
 def build_bridges(geoms, m):
@@ -46,7 +34,7 @@ def build_bridges(geoms, m):
             j_e = j + 1
             if j_e == len(vertexes[i]):
                 j_e = 0
-            e_full[frozenset([(i, j), (i, j_e)])] = {"origin": "bound"}
+            e_full[(i, j, i, j_e)] = {"origin": "bound"}
     
     # 1. Построение отрезков
     for i_b in range(n - 1):
@@ -54,65 +42,42 @@ def build_bridges(geoms, m):
             for i_e in range(i_b + 1, n):
                 for j_e in range(len(vertexes[i_e])):
                     if is_free(LineString([vertexes[i_b][j_b], vertexes[i_e][j_e]]), geoms):
-                        e_full[frozenset([(i_b, j_b), (i_e, j_e)])] = {"origin": "edge"}
+                        e_full[(i_b, j_b, i_e, j_e)] = {"origin": "edge"}
     
-    # 2. Сбор треугольников
-    trs = {}
-    for i in range(n - 1):
-        for j_b in range(len(vertexes[i])):
-            j_e = j_b + 1
-            if j_e == len(vertexes[i]):
-                j_e = 0
-            e_j_b = get_edges(i, j_b, e_full)
-            e_j_e = get_edges(i, j_e, e_full)
-            common = find_common(e_j_b, e_j_e)
-            for v in common:
-                trs[frozenset([(i, j_b), (i, j_e), v])] = {"location": "out"}
-                
+    # 2. Сбор четырехугольников
+    quad = {}
+    for edge in e_full:
+        line_e = LineString([vertexes[edge[0]][1], vertexes[edge[2]][3]])
+        neighbours = get_neighbours(edge, len(vertexes[0]), len(vertexes[2]))
+        for neighbour in neighbours:
+            condition1 = neighbour in e_full
+            line_n = LineString([vertexes[neighbour[0]][1], vertexes[neighbour[2]][3]])
+            condition2 = not line_n.intersects(line_e)
+            if condition1 and condition2:
+                first = min(edge, neighbour)
+                second = max(edge, neighbour)
+                cur_area = Polygon([vertexes[edge[0]][edge[1]], vertexes[edge[2]][edge[3]],
+                                    vertexes[neighbour[2]][edge[3]], vertexes[neighbour[0]][edge[1]]]).area
+                quad[(first, second)] = cur_area
 
-"""
-    Алгоритм построения перетяжек между полигонами
-    с последующим объединением
-    
-    Дано:
-    список p из n полигонов: 
-        упорядоченные вершины v[i][j]
-            i [0..n) - номер полигона
-            j [0 .. len(v[i])) - номер вершины конкретного полигона
-        информация о ребрах
-            e[i][j] = (v[i][j], v[i][j + 1])
-                i [0..n] - номер полигона
-                j [0 .. len(v[i]) - 1] - номер ребра
-    хотим m полигонов, m<n
-                
-    Найти:
-        ребра, служащие границами для перетяжек между полигонами с наименьшей площадью
-    
-        перетяжка - четырехугольник(реже треугольник), 
-            две стороны которого - ребра двух разных полигонов
-    
-    Шаги
-        1.  Найти отрезки между вершинами разных полигонов,
-            которые лежат вне полигонов
-        2.  Собрать в список полученные треугольники 
-            Одно ребро треугольника относится только к одному полигону
-        3.  Какие из отрезков - оси перетяжек
-                смотрим пару соседей ребра - треугольников
-                в каждом должно быть по edge из двух разных полигонов
-        4. проходка по перетяжкам
-            берем площади соседних от оси треугольников, сортурием, ищем минимум
-        5. объединение с перетяжкой
-            добавляем треугольники с минимальной площадью вокруг оси перетяжки к будущему объединению
-            ось перетяжки лишается своего статуса, это ребро внутри будущей геометрии
-            в каждом из треульников изначально ребро полигона, ось перетяжки и третий отрезок
-            третий отрезок становится одной из границ новой геометрии
-        6. проверка не перетяжек на предмет того, попали ли они в класс перетяжек
-            - добавить для третьих ребер, ставших границами
-            - убрать для уже объединенных
-            сохраняя порядок по площадям перетяжек
-                если треугольник в будущем объединении, его площадь не учитываем при сортировке
-            
-        повторяем 5 - 6, пока не выполним n-m итераций    
-        
-        объединем перетяжки и полигоны в один полигон
-"""
+    # 3. Выбор перетяжек
+    bridges = []
+    q_sorted = sorted(list(quad.items()), key=lambda x: x[1], reverse=True)
+    for cnt in range(n - m):
+        item = q_sorted.pop()
+        e1 = item[0]
+        e2 = item[1]
+        poly = Polygon([vertexes[e1[0]][e1[1]], vertexes[e1[2]][e1[3]],
+                        vertexes[e2[2]][e2[3]], vertexes[e2[0]][e2[1]]])
+        bridges.append(poly)
+        e_full[e1]["origin"] = "bound"
+        e_full[e2]["origin"] = "bound"
+        b1 = (e1[0], min(e1[1], e2[1]), e2[0], max(e1[1], e2[1]))
+        b2 = (e1[2], min(e1[3], e2[3]), e2[2], max(e1[3], e2[3]))
+        e_full[b2]["origin"] = "inner"
+        e_full[b1]["origin"] = "inner"
+        for e in e_full:
+            if e_full[e]["origin"] in ("edge", "bound"):
+                line = LineString([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]]])
+                if intersects_on_edge(line, poly) and not e in [e1, e2, b1, b2]:
+                    e_full[e]["origin"] = "secant"
