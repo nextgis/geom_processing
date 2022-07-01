@@ -38,9 +38,8 @@ def is_secant(line, poly):
     return True
 
 
-def build_bridges(geoms, m):
-    """Builds bridges-polygons between n polygons to save m polygons where m < n."""
-    vertexes = [geom.exterior.coords for geom in geoms]  # vetrexes[i][j] - j-ая вершина в i-ом полигоне
+def get_lines(geoms):
+    vertexes = [geom.exterior.coords for geom in geoms]
     e_full = {}  # ребра: исходные и добавленные
     n = len(vertexes)
     for i in range(n):
@@ -50,19 +49,20 @@ def build_bridges(geoms, m):
                 j_e = 0
             e_full[(i, j, i, j_e)] = {"origin": "bound"}
 
-    # 1. Построение отрезков
     for i_b in range(n - 1):
         for j_b in range(len(vertexes[i_b])):
             for i_e in range(i_b + 1, n):
                 for j_e in range(len(vertexes[i_e])):
                     if is_free(LineString([vertexes[i_b][j_b], vertexes[i_e][j_e]]), geoms):
                         e_full[(i_b, j_b, i_e, j_e)] = {"origin": "edge"}
+    return e_full
 
-    # 2. Сбор четырехугольников
+
+def get_quads(e_full, vertexes):
     quad = {}
     for edge in e_full:
         line_e = LineString([vertexes[edge[0]][1], vertexes[edge[2]][3]])
-        neighbours = get_neighbours(edge, len(vertexes[0]), len(vertexes[2]))
+        neighbours = get_neighbours(edge, len(vertexes[edge[0]]), len(vertexes[edge[2]]))
         for neighbour in neighbours:
             condition1 = neighbour in e_full
             line_n = LineString([vertexes[neighbour[0]][1], vertexes[neighbour[2]][3]])
@@ -73,11 +73,13 @@ def build_bridges(geoms, m):
                 cur_area = Polygon([vertexes[edge[0]][edge[1]], vertexes[edge[2]][edge[3]],
                                     vertexes[neighbour[2]][edge[3]], vertexes[neighbour[0]][edge[1]]]).area
                 quad[(first, second)] = cur_area
+    return quad
 
-    # 3. Выбор перетяжек
+
+def get_bridges(vertexes, e_full, quad, nm):
     bridges = []
     q_sorted = sorted(list(quad.items()), key=lambda x: x[1], reverse=True)
-    for cnt in range(n - m):
+    for cnt in range(nm):
         item = q_sorted.pop()
         e1 = item[0]
         e2 = item[1]
@@ -99,6 +101,21 @@ def build_bridges(geoms, m):
             if (e_full[q[0]]["origin"] in ("inner", "secant")
                     or e_full[q[1]]["origin"] in ("inner", "secant")):
                 q_sorted.remove(q)
+    return bridges
 
-    result = unary_union[geoms + bridges]
+
+def build_bridges(geoms, m):
+    """Builds bridges-polygons between n polygons to save m polygons where m < n."""
+    # 1. Построение отрезков
+    vertexes = [geom.exterior.coords for geom in geoms]  # vetrexes[i][j] - j-ая вершина в i-ом полигоне
+    e_full = get_lines(geoms)
+
+    # 2. Сбор четырехугольников
+    quad = get_quads(e_full, vertexes)
+
+    # 3. Выбор перетяжек
+    bridges = get_bridges(vertexes, e_full, quad, len(vertexes) - m)
+
+    to_union = list(geoms) + bridges
+    result = unary_union(to_union)
     return result

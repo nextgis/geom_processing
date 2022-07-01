@@ -46,6 +46,12 @@ class TestBridging(unittest.TestCase):
         p = wkt.loads("Polygon((1 3, 2 3, 2 2, 1 3))")
         self.assertFalse(is_secant(line, p))
 
+    def test_build_bridges(self):
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0),(0 2, 0 3, 1 3, 0 2),(2 0, 3 0, 3 1, 2 0)))")
+        res = build_bridges(mp.geoms, 1)
+        correct = wkt.loads("Polygon((0 0, 1 0, 2 0, 3 0, 1 3, 3 1, 3 0, 2 0, 1 0, 0 0))")
+        self.assertTrue(res.equals(correct))
+
 
 if __name__ == '__main__':
     unittest.main()
