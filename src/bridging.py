@@ -1,12 +1,14 @@
-from shapely.geometry import LineString, Polygon
+from shapely.geometry import LineString, Polygon, MultiPoint
 from shapely.ops import unary_union
 
 
 def is_free(line, polygons):
     """Checks if line intersects one or more polygon from list."""
     to_return = 1
+    ends = MultiPoint(line.coords)
     for poly in polygons:
-        to_return = to_return and not poly.intersects(line)
+        inter = line.intersection(poly).difference(ends)
+        to_return = to_return and not inter
     return to_return
 
 
