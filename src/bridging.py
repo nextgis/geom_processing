@@ -1,4 +1,5 @@
 from shapely.geometry import LineString, Polygon
+from shapely.ops import unary_union
 
 
 def is_free(line, polygons):
@@ -10,6 +11,7 @@ def is_free(line, polygons):
 
 
 def get_neighbours(edge, size1, size2):
+    """Returns edges, which connect neighbour vertexes on polygons for edge-parameter."""
     p1 = edge[0]
     v1_i = edge[1]
     p2 = edge[2]
@@ -21,7 +23,13 @@ def get_neighbours(edge, size1, size2):
 
 
 def intersects_on_edge(line, poly):
-    pass
+    """Checks if line intersects polygon on edge, but not on vertex."""
+    point = line.intersection(poly.boundary)
+    if point.empty:
+        return False
+    if len(point) == 1 and point[0] in [poly.boundary.coords]:
+        return False
+    return True
 
 
 def build_bridges(geoms, m):
@@ -35,7 +43,7 @@ def build_bridges(geoms, m):
             if j_e == len(vertexes[i]):
                 j_e = 0
             e_full[(i, j, i, j_e)] = {"origin": "bound"}
-    
+
     # 1. Построение отрезков
     for i_b in range(n - 1):
         for j_b in range(len(vertexes[i_b])):
@@ -43,7 +51,7 @@ def build_bridges(geoms, m):
                 for j_e in range(len(vertexes[i_e])):
                     if is_free(LineString([vertexes[i_b][j_b], vertexes[i_e][j_e]]), geoms):
                         e_full[(i_b, j_b, i_e, j_e)] = {"origin": "edge"}
-    
+
     # 2. Сбор четырехугольников
     quad = {}
     for edge in e_full:
@@ -79,5 +87,12 @@ def build_bridges(geoms, m):
         for e in e_full:
             if e_full[e]["origin"] in ("edge", "bound"):
                 line = LineString([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]]])
-                if intersects_on_edge(line, poly) and not e in [e1, e2, b1, b2]:
+                if intersects_on_edge(line, poly) and e not in [e1, e2, b1, b2]:
                     e_full[e]["origin"] = "secant"
+        for q in q_sorted:
+            if (e_full[q[0]]["origin"] in ("inner", "secant")
+                    or e_full[q[1]]["origin"] in ("inner", "secant")):
+                q_sorted.remove(q)
+
+    result = unary_union[geoms + bridges]
+    return result
