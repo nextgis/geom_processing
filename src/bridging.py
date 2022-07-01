@@ -1,4 +1,4 @@
-from shapely.geometry import LineString, Polygon, MultiPoint
+from shapely.geometry import LineString, Polygon, MultiPoint, Point
 from shapely.ops import unary_union
 
 
@@ -24,12 +24,16 @@ def get_neighbours(edge, size1, size2):
             (p1, (v1_i + 1) % size1, p2, (v2_i + 1) % size2)]
 
 
-def intersects_on_edge(line, poly):
+def is_secant(line, poly):
     """Checks if line intersects polygon on edge, but not on vertex."""
     point = line.intersection(poly.boundary)
-    if point.empty:
+    if point.is_empty:
         return False
-    if len(point) == 1 and point[0] in [poly.boundary.coords]:
+    if point.geom_type == "MultiPoint":
+        return True
+    if point.geom_type == "Point" and point in [Point(p) for p in poly.boundary.coords]:
+        return False
+    if point.geom_type == "LineString":
         return False
     return True
 
@@ -89,7 +93,7 @@ def build_bridges(geoms, m):
         for e in e_full:
             if e_full[e]["origin"] in ("edge", "bound"):
                 line = LineString([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]]])
-                if intersects_on_edge(line, poly) and e not in [e1, e2, b1, b2]:
+                if is_secant(line, poly) and e not in [e1, e2, b1, b2]:
                     e_full[e]["origin"] = "secant"
         for q in q_sorted:
             if (e_full[q[0]]["origin"] in ("inner", "secant")
