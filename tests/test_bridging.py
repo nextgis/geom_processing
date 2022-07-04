@@ -47,10 +47,24 @@ class TestBridging(unittest.TestCase):
         self.assertFalse(is_secant(line, p))
 
     def test_build_bridges(self):
-        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0),(0 2, 0 3, 1 3, 0 2),(2 0, 3 0, 3 1, 2 0)))")
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
         res = build_bridges(mp.geoms, 1)
         correct = wkt.loads("Polygon((0 0, 1 0, 2 0, 3 0, 1 3, 3 1, 3 0, 2 0, 1 0, 0 0))")
         self.assertTrue(res.equals(correct))
+
+    def test_get_lines(self):
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
+        res = get_lines(mp.geoms)
+        correct = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'bound', (0, 2, 0, 0): 'bound',
+                   (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
+                   (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'bound',
+                   (0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
+                   (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
+                   (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
+                   (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
+                   (1, 0, 2, 0): 'edge', (1, 0, 2, 2): 'edge',
+                   (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
+        self.assertTrue(res == correct)
 
 
 if __name__ == '__main__':
