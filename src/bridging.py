@@ -59,22 +59,22 @@ def get_lines(geoms):
     return e_full
 
 
-def get_quads(e_full, vertexes):
-    quad = {}
-    for edge in e_full:
-        line_e = LineString([vertexes[edge[0]][1], vertexes[edge[2]][3]])
-        neighbours = get_neighbours(edge, len(vertexes[edge[0]]), len(vertexes[edge[2]]))
+def get_quads(edges, vertexes):
+    quads = {}
+    for edge in edges:
+        line_e = LineString([vertexes[edge[0]][edge[1]], vertexes[edge[2]][edge[3]]])
+        neighbours = get_neighbours(edge, len(vertexes[edge[0]]) - 1, len(vertexes[edge[2]]) - 1)
         for neighbour in neighbours:
-            condition1 = neighbour in e_full
-            line_n = LineString([vertexes[neighbour[0]][1], vertexes[neighbour[2]][3]])
+            condition1 = neighbour in edges
+            line_n = LineString([vertexes[neighbour[0]][neighbour[1]], vertexes[neighbour[2]][neighbour[3]]])
             condition2 = not line_n.intersects(line_e)
             if condition1 and condition2:
                 first = min(edge, neighbour)
                 second = max(edge, neighbour)
                 cur_area = Polygon([vertexes[edge[0]][edge[1]], vertexes[edge[2]][edge[3]],
-                                    vertexes[neighbour[2]][edge[3]], vertexes[neighbour[0]][edge[1]]]).area
-                quad[(first, second)] = cur_area
-    return quad
+                                    vertexes[neighbour[2]][neighbour[3]], vertexes[neighbour[0]][neighbour[1]]]).area
+                quads[(first, second)] = cur_area
+    return quads
 
 
 def get_bridges(vertexes, e_full, quad, nm):
@@ -112,7 +112,8 @@ def build_bridges(geoms, m):
     e_full = get_lines(geoms)
 
     # 2. Сбор четырехугольников
-    quad = get_quads(e_full, vertexes)
+    edges = [edge for edge in e_full if e_full[edge] == "edge"]
+    quad = get_quads(edges, vertexes)
 
     # 3. Выбор перетяжек
     bridges = get_bridges(vertexes, e_full, quad, len(vertexes) - m)

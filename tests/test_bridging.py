@@ -66,6 +66,21 @@ class TestBridging(unittest.TestCase):
                    (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
         self.assertTrue(res == correct)
 
+    def test_get_quads(self):
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
+        vertexes = [geom.exterior.coords for geom in mp.geoms]
+        edges = {(0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
+                 (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
+                 (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
+                 (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
+                 (1, 0, 2, 0): 'edge', (1, 0, 2, 2): 'edge',
+                 (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
+        res = get_quads(edges, vertexes)
+        correct = {((0, 1, 1, 0), (0, 2, 1, 2)): 2.0,
+                   ((0, 1, 2, 2), (0, 2, 2, 0)): 2.0,
+                   ((1, 0, 2, 0), (1, 2, 2, 2)): 4.0}
+        self.assertEqual(res,correct)
+
 
 if __name__ == '__main__':
     unittest.main()
