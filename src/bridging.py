@@ -30,11 +30,17 @@ def is_secant(line, poly):
     if point.is_empty:
         return False
     if point.geom_type == "MultiPoint":
-        return True
+        if poly.covers(line):
+            return False
+        else:
+            return True
     if point.geom_type == "Point" and point in [Point(p) for p in poly.boundary.coords]:
         return False
     if point.geom_type == "LineString":
-        return False
+        if poly.covers(line):
+            return False
+        else:
+            return True
     return True
 
 
@@ -77,31 +83,48 @@ def get_quads(edges, vertexes):
     return quads
 
 
+def get_new_inner(e1, e2):
+    ps1 = sorted([e2[1], e1[1]], reverse=not(e1[1] and e2[1]))
+    ps2 = sorted([e2[3], e1[3]], reverse=not(e1[3] and e2[3]))
+    b1 = (e1[0], ps1[0], e2[0], ps1[1])
+    b2 = (e1[2], ps2[0], e2[2], ps2[1])
+    return b1, b2
+
+
+def handle_edges(e1, e2, poly, e_full, vertexes):
+    e_full[e1] = "bound"
+    e_full[e2] = "bound"
+    b = get_new_inner(e1, e2)
+    e_full[b[0]] = "inner"
+    e_full[b[1]] = "inner"
+    for e in e_full:
+        if e_full[e] in ("edge", "bound"):
+            line = LineString([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]]])
+            if is_secant(line, poly) and e not in [e1, e2, b[0], b[1]]:
+                e_full[e] = "secant"
+            if poly.covers(line) and e not in [e1, e2, b[0], b[1]]:
+                e_full[e] = "inner"
+
+
+def handle_quads(quads, e_full):
+    for q in quads:
+        if (e_full[q[0]] in ("inner", "secant")
+                or e_full[q[1]] in ("inner", "secant")):
+            quads.remove(q)
+
+
 def get_bridges(vertexes, e_full, quad, nm):
     bridges = []
     q_sorted = sorted(list(quad.items()), key=lambda x: x[1], reverse=True)
     for cnt in range(nm):
         item = q_sorted.pop()
-        e1 = item[0]
-        e2 = item[1]
+        e1 = item[0][0]
+        e2 = item[0][1]
         poly = Polygon([vertexes[e1[0]][e1[1]], vertexes[e1[2]][e1[3]],
                         vertexes[e2[2]][e2[3]], vertexes[e2[0]][e2[1]]])
         bridges.append(poly)
-        e_full[e1] = "bound"
-        e_full[e2] = "bound"
-        b1 = (e1[0], min(e1[1], e2[1]), e2[0], max(e1[1], e2[1]))
-        b2 = (e1[2], min(e1[3], e2[3]), e2[2], max(e1[3], e2[3]))
-        e_full[b2] = "inner"
-        e_full[b1] = "inner"
-        for e in e_full:
-            if e_full[e] in ("edge", "bound"):
-                line = LineString([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]]])
-                if is_secant(line, poly) and e not in [e1, e2, b1, b2]:
-                    e_full[e] = "secant"
-        for q in q_sorted:
-            if (e_full[q[0]] in ("inner", "secant")
-                    or e_full[q[1]] in ("inner", "secant")):
-                q_sorted.remove(q)
+        handle_edges(e1, e2, poly, e_full, vertexes)
+        handle_quads(q_sorted, e_full)
     return bridges
 
 
