@@ -88,7 +88,7 @@ def get_quads(edges, vertexes):
     return quads
 
 
-def arrange_vertexes(e1, e2, vertexes):  # возможно нужна валидация
+def arrange_vertexes(e1, e2, vertexes):
     a1 = e1[0], e1[1]
     b1 = e1[2], e1[3]
     a2 = e2[0], e2[1]
@@ -184,17 +184,15 @@ def get_bridges(vertexes, e_full, quad, nm):
 
 def build_bridges(geoms, m):
     """Builds bridges-polygons between n polygons to save m polygons where m < n."""
-    # 1. Построение отрезков
+    if m > len(geoms):
+        raise ValueError("There are less amount of polygons in geometry than parament value")
+    elif m < 1:
+        raise ValueError("Amount of polygons couldn't be less than 1")
     vertexes = [geom.exterior.coords for geom in geoms]  # vetrexes[i][j] - j-ая вершина в i-ом полигоне
     e_full = get_lines(geoms)
-
-    # 2. Сбор четырехугольников
     edges = [edge for edge in e_full if e_full[edge] == "edge"]
     quad = get_quads(edges, vertexes)
-
-    # 3. Выбор перетяжек
     bridges = get_bridges(vertexes, e_full, quad, len(vertexes) - m)
-
     to_union = bridges + list(geoms)
     result = unary_union(to_union)
     return result
