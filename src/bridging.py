@@ -88,26 +88,32 @@ def get_quads(edges, vertexes):
     return quads
 
 
-def get_new_inner(e1, e2):  # возможно нужна валидация
-    ps1 = sorted([e2[1], e1[1]], reverse=not(e1[1] and e2[1]))
-    ps2 = sorted([e2[3], e1[3]], reverse=not(e1[3] and e2[3]))
-    b1 = (e1[0], ps1[0], e2[0], ps1[1])
-    b2 = (e1[2], ps2[0], e2[2], ps2[1])
-    return b1, b2
+def arrange_vertexes(e1, e2, vertexes):  # возможно нужна валидация
+    a1 = e1[0], e1[1]
+    b1 = e1[2], e1[3]
+    a2 = e2[0], e2[1]
+    b2 = e2[2], e2[3]
+    line_a = LineString([vertexes[a1[0]][a1[1]], vertexes[a2[0]][a2[1]]])
+    line_b = LineString([vertexes[b1[0]][b1[1]], vertexes[b2[0]][b2[1]]])
+    if line_a.intersects(line_b):
+        return a1, b1, a2, b2
+    else:
+        return a1, b1, b2, a2
 
 
-def handle_edges(e1, e2, poly, e_full, vertexes):
+def handle_edges(e1, e2, v, poly, e_full, vertexes):
     e_full[e1] = "bound"
     e_full[e2] = "bound"
-    b = get_new_inner(e1, e2)
-    e_full[b[0]] = "inner"
-    e_full[b[1]] = "inner"
+    bnd1 = make_edge(v[1], v[2])
+    bnd2 = make_edge(v[0], v[3])
+    e_full[bnd1] = "inner"
+    e_full[bnd2] = "inner"
     for e in e_full:
         if e_full[e] in ("edge", "bound"):
             line = LineString([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]]])
-            if is_secant(line, poly) and e not in [e1, e2, b[0], b[1]]:
+            if is_secant(line, poly) and e not in [e1, e2, bnd1, bnd2]:
                 e_full[e] = "secant"
-            if poly.covers(line) and e not in [e1, e2, b[0], b[1]]:
+            if poly.covers(line) and e not in [e1, e2, bnd1, bnd2]:
                 e_full[e] = "inner"
 
 
@@ -167,10 +173,11 @@ def get_bridges(vertexes, e_full, quad, nm):
         item = q_sorted.pop()
         e1 = item[0][0]
         e2 = item[0][1]
-        poly = Polygon([vertexes[e1[0]][e1[1]], vertexes[e1[2]][e1[3]],
-                        vertexes[e2[2]][e2[3]], vertexes[e2[0]][e2[1]]])  # нужна валидация
+        v = arrange_vertexes(e1, e2, vertexes)
+        poly = Polygon([vertexes[v[0][0]][v[0][1]], vertexes[v[1][0]][v[1][1]],
+                        vertexes[v[2][0]][v[2][1]], vertexes[v[3][0]][v[3][1]]])
         bridges.append(poly)
-        handle_edges(e1, e2, poly, e_full, vertexes)
+        handle_edges(e1, e2, v, poly, e_full, vertexes)
         handle_quads(e1, e2, q_sorted, e_full, vertexes)
     return bridges
 
