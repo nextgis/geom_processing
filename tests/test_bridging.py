@@ -94,8 +94,9 @@ class TestBridging(unittest.TestCase):
                    (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
         e1 = (0, 1, 2, 2)
         e2 = (0, 2, 2, 0)
+        b = get_new_inner(e1, e2)
         poly = wkt.loads("POLYGON ((0 1, 3 1, 2 0, 1 0, 0 1))")
-        handle_edges(e1, e2, poly,edges, vertexes)
+        handle_edges(e1, e2, b, poly,edges, vertexes)
         new_edges = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'inner', (0, 2, 0, 0): 'bound',
                      (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
                      (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'inner',
@@ -110,7 +111,10 @@ class TestBridging(unittest.TestCase):
     def test_get_bridges(self):
         mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
         vertexes = [geom.exterior.coords for geom in mp.geoms]
-        edges = {(0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
+        edges = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'bound', (0, 2, 0, 0): 'bound',
+                 (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
+                 (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'bound',
+                 (0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
                  (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
                  (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
                  (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
@@ -119,12 +123,14 @@ class TestBridging(unittest.TestCase):
         quads = {((0, 1, 1, 0), (0, 2, 1, 2)): 2.0,
                    ((0, 1, 2, 2), (0, 2, 2, 0)): 2.0,
                    ((1, 0, 2, 0), (1, 2, 2, 2)): 4.0}
-        res_bridge = get_bridges(vertexes, edges, quads, 2)
+        res_bridge_wkt = [g.wkt for g in get_bridges(vertexes, edges, quads, 2)]
+        correct_wkt = ['POLYGON ((0 1, 3 1, 2 0, 1 0, 0 1))', 'POLYGON ((0 1, 0 2, 1 3, 3 1, 0 1))']
+        self.assertEqual(res_bridge_wkt, correct_wkt)
 
     def test_build_bridges(self):
-        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
-        res = build_bridges(mp.geoms, 1)
-        correct = wkt.loads("Polygon((0 0, 1 0, 2 0, 3 0, 1 3, 3 1, 3 0, 2 0, 1 0, 0 0))")
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)), ((0 2, 0 3, 1 3, 0 2)), ((2 0, 3 0, 3 1, 2 0)))")
+        res = build_bridges(mp.geoms, 2)
+        correct = wkt.loads("Polygon((0 0, 1 0, 2 0, 3 0, 3 1, 0 3, 0 2, 0 1, 0 0))")
         self.assertTrue(res.equals(correct))
 
 

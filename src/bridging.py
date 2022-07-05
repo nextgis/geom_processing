@@ -91,10 +91,9 @@ def get_new_inner(e1, e2):
     return b1, b2
 
 
-def handle_edges(e1, e2, poly, e_full, vertexes):
+def handle_edges(e1, e2, b, poly, e_full, vertexes):
     e_full[e1] = "bound"
     e_full[e2] = "bound"
-    b = get_new_inner(e1, e2)
     e_full[b[0]] = "inner"
     e_full[b[1]] = "inner"
     for e in e_full:
@@ -106,11 +105,12 @@ def handle_edges(e1, e2, poly, e_full, vertexes):
                 e_full[e] = "inner"
 
 
-def handle_quads(quads, e_full):
-    for q in quads:
-        if (e_full[q[0]] in ("inner", "secant")
-                or e_full[q[1]] in ("inner", "secant")):
-            quads.remove(q)
+def handle_quads(e1, e2, b, quads, e_full):
+    pass
+    # for q in quads:
+     #   if (e_full[q[0]] in ("inner", "secant")
+      #          or e_full[q[1]] in ("inner", "secant")):
+       #     quads.remove(q)
 
 
 def get_bridges(vertexes, e_full, quad, nm):
@@ -120,11 +120,12 @@ def get_bridges(vertexes, e_full, quad, nm):
         item = q_sorted.pop()
         e1 = item[0][0]
         e2 = item[0][1]
+        b = get_new_inner(e1, e2)
         poly = Polygon([vertexes[e1[0]][e1[1]], vertexes[e1[2]][e1[3]],
                         vertexes[e2[2]][e2[3]], vertexes[e2[0]][e2[1]]])
         bridges.append(poly)
-        handle_edges(e1, e2, poly, e_full, vertexes)
-        handle_quads(q_sorted, e_full)
+        handle_edges(e1, e2, b, poly, e_full, vertexes)
+        handle_quads(e1, e2, b, q_sorted, e_full)
     return bridges
 
 
@@ -141,6 +142,6 @@ def build_bridges(geoms, m):
     # 3. Выбор перетяжек
     bridges = get_bridges(vertexes, e_full, quad, len(vertexes) - m)
 
-    to_union = list(geoms) + bridges
+    to_union = bridges + list(geoms)
     result = unary_union(to_union)
     return result
