@@ -65,6 +65,12 @@ def get_lines(geoms):
     return e_full
 
 
+def make_quad(e1, e2):
+    first = min(e1, e2)
+    second = max(e1, e2)
+    return first, second
+
+
 def get_quads(edges, vertexes):
     quads = {}
     for edge in edges:
@@ -75,15 +81,14 @@ def get_quads(edges, vertexes):
             line_n = LineString([vertexes[neighbour[0]][neighbour[1]], vertexes[neighbour[2]][neighbour[3]]])
             condition2 = not line_n.intersects(line_e)
             if condition1 and condition2:
-                first = min(edge, neighbour)
-                second = max(edge, neighbour)
+                qd = make_quad(edge, neighbour)
                 cur_area = Polygon([vertexes[edge[0]][edge[1]], vertexes[edge[2]][edge[3]],
                                     vertexes[neighbour[2]][neighbour[3]], vertexes[neighbour[0]][neighbour[1]]]).area
-                quads[(first, second)] = cur_area
+                quads[qd] = cur_area
     return quads
 
 
-def get_new_inner(e1, e2):
+def get_new_inner(e1, e2):  # возможно нужна валидация
     ps1 = sorted([e2[1], e1[1]], reverse=not(e1[1] and e2[1]))
     ps2 = sorted([e2[3], e1[3]], reverse=not(e1[3] and e2[3]))
     b1 = (e1[0], ps1[0], e2[0], ps1[1])
@@ -91,9 +96,10 @@ def get_new_inner(e1, e2):
     return b1, b2
 
 
-def handle_edges(e1, e2, b, poly, e_full, vertexes):
+def handle_edges(e1, e2, poly, e_full, vertexes):
     e_full[e1] = "bound"
     e_full[e2] = "bound"
+    b = get_new_inner(e1, e2)
     e_full[b[0]] = "inner"
     e_full[b[1]] = "inner"
     for e in e_full:
@@ -105,12 +111,53 @@ def handle_edges(e1, e2, b, poly, e_full, vertexes):
                 e_full[e] = "inner"
 
 
-def handle_quads(e1, e2, b, quads, e_full):
-    pass
-    # for q in quads:
-     #   if (e_full[q[0]] in ("inner", "secant")
-      #          or e_full[q[1]] in ("inner", "secant")):
-       #     quads.remove(q)
+def make_edge(bn, ed):
+    mn = min(bn, ed)
+    mx = max(bn, ed)
+    if mn[0] == mx[0] and mn[1] == 0 and mx[1] > 1:
+        t = mn
+        mn = mx
+        mx = t
+    return mn[0], mn[1], mx[0], mx[1]
+
+
+def get_second_points(point, e_full):
+    points = [(i[0], i[1]) for i in e_full if e_full[i] == "edge"
+              and (i[0], i[1]) != point and (i[2], i[3]) == point] \
+             + [(i[2], i[3]) for i in e_full if e_full[i] == "edge"
+                and (i[0], i[1]) == point and (i[2], i[3]) != point]
+    return points
+
+
+def form_quads(e, quads, e_full, vertexes):
+    e_b = (e[0], e[1])
+    e_e = (e[2], e[3])
+    b_points = get_second_points(e_b, e_full)
+    e_points = get_second_points(e_e, e_full)
+    for bn in b_points:
+        for ed in e_points:
+            to_check = make_edge(bn, ed)
+            if to_check in e_full.keys():
+                if e_full[to_check] == "bound":
+                    poly = Polygon([vertexes[e[0]][e[1]], vertexes[e[2]][e[3]],
+                                    vertexes[ed[0]][ed[1]], vertexes[bn[0]][bn[1]]])
+                    if poly.is_valid:
+                        e1 = make_edge(e_b, bn)
+                        e2 = make_edge(e_e, ed)
+                        qd = make_quad(e1, e2)
+                        area = poly.area
+                        quads.append((qd, area))
+
+
+def handle_quads(e1, e2, quads, e_full, vertexes):
+    to_remove = [q for q in quads
+                 if e_full[q[0][0]] in ("inner", "secant")
+                 or e_full[q[0][1]] in ("inner", "secant")]
+    for item in to_remove:
+        quads.remove(item)
+    for e in e1, e2:
+        form_quads(e, quads, e_full, vertexes)
+    quads.sort(key=lambda x: x[1], reverse=True)
 
 
 def get_bridges(vertexes, e_full, quad, nm):
@@ -120,12 +167,11 @@ def get_bridges(vertexes, e_full, quad, nm):
         item = q_sorted.pop()
         e1 = item[0][0]
         e2 = item[0][1]
-        b = get_new_inner(e1, e2)
         poly = Polygon([vertexes[e1[0]][e1[1]], vertexes[e1[2]][e1[3]],
-                        vertexes[e2[2]][e2[3]], vertexes[e2[0]][e2[1]]])
+                        vertexes[e2[2]][e2[3]], vertexes[e2[0]][e2[1]]])  # нужна валидация
         bridges.append(poly)
-        handle_edges(e1, e2, b, poly, e_full, vertexes)
-        handle_quads(e1, e2, b, q_sorted, e_full)
+        handle_edges(e1, e2, poly, e_full, vertexes)
+        handle_quads(e1, e2, q_sorted, e_full, vertexes)
     return bridges
 
 
