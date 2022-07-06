@@ -2,6 +2,120 @@ from shapely.geometry import LineString, Polygon, MultiPoint, Point
 from shapely.ops import unary_union
 
 
+class Edge:
+    def __init__(self, b_poly, b_vertex, b_poly_size,
+                 e_poly, e_vertex, e_poly_size, status):
+        self.b_poly = b_poly
+        self.b_vertex = b_vertex
+        self.e_poly = e_poly
+        self.e_vertex = e_vertex
+        self.status = status
+        self.b_poly_size = b_poly_size
+        self.e_poly_size = e_poly_size
+
+    def set_status(self, status):
+        self.status = status
+
+    def get_neighbours(self):
+        return [(self.b_poly, (self.b_vertex + b_shift) % self.b_poly_size,
+                 self.e_poly, (self.e_vertex + e_shift) % self.e_poly_size)
+                for b_shift in (-1, +1) for e_shift in (-1, +1)]
+
+    def make_tuple(self):
+        return self.b_poly, self.b_vertex, self.e_poly, self.e_vertex
+
+    def __eq__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s == o
+
+    def __lt__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s < o
+
+    def __gt__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s > o
+
+    def __ne__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s != o
+
+    def __le__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s <= o
+
+    def __ge__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s >= o
+
+
+class Quad:
+    def __init__(self, e1, e2):
+        first = min(e1, e2)
+        second = max(e1, e2)
+        self.e1 = first
+        self.e2 = second
+
+    def make_valid_polygon(self, vertexes):
+        line_b = LineString([vertexes[self.e1.b_poly][self.e1.b_vertex],
+                             vertexes[self.e2.b_poly][self.e2.b_vertex]])
+        line_e = LineString([vertexes[self.e1.e_poly][self.e1.e_vertex],
+                             vertexes[self.e2.e_poly][self.e2.e_vertex]])
+        if line_b.intersects(line_e):
+            return Polygon([vertexes[self.e1.b_poly][self.e1.b_vertex],
+                            vertexes[self.e1.e_poly][self.e1.e_vertex],
+                            vertexes[self.e2.b_poly][self.e2.b_vertex],
+                            vertexes[self.e2.e_poly][self.e2.e_vertex]])
+        else:
+            return Polygon([vertexes[self.e1.b_poly][self.e1.b_vertex],
+                            vertexes[self.e2.b_poly][self.e2.b_vertex],
+                            vertexes[self.e1.e_poly][self.e1.e_vertex],
+                            vertexes[self.e2.e_poly][self.e2.e_vertex]])
+
+    def get_area(self, vertexes):
+        return self.make_valid_polygon(vertexes).area
+        
+    def make_tuple(self):
+        return self.e1.make_tuple(), self.e2.make_tuple()
+
+    def __eq__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s == o
+
+    def __lt__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s < o
+
+    def __gt__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s > o
+
+    def __ne__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s != o
+
+    def __le__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s <= o
+
+    def __ge__(self, other):
+        s = self.make_tuple()
+        o = other.make_tuple()
+        return s >= o
+
+
+# для геометрий shapely
 def is_free(line, polygons):
     """Checks if line intersects one or more polygon from list."""
     to_return = 1
@@ -12,6 +126,7 @@ def is_free(line, polygons):
     return to_return
 
 
+# метод класса Edge
 def get_neighbours(edge, size1, size2):
     """Returns edges, which connect neighbour vertexes on polygons for edge-parameter."""
     p1 = edge[0]
@@ -24,6 +139,7 @@ def get_neighbours(edge, size1, size2):
             (p1, (v1_i + 1) % size1, p2, (v2_i + 1) % size2)]
 
 
+# для геометрий shapely
 def is_secant(line, poly):
     """Checks if line intersects polygon on edge, but not on vertex."""
     point = line.intersection(poly.boundary)
@@ -44,6 +160,8 @@ def is_secant(line, poly):
     return True
 
 
+# для геометрий shapely
+# todo должен возвращать список Edge
 def get_lines(geoms):
     vertexes = [geom.exterior.coords for geom in geoms]
     e_full = {}  # ребра: исходные и добавленные
@@ -65,12 +183,14 @@ def get_lines(geoms):
     return e_full
 
 
+# сделан класс Quad
 def make_quad(e1, e2):
     first = min(e1, e2)
     second = max(e1, e2)
     return first, second
 
 
+# todo переделать для классов Edge и Quad
 def get_quads(edges, vertexes):
     quads = {}
     for edge in edges:
@@ -88,6 +208,7 @@ def get_quads(edges, vertexes):
     return quads
 
 
+# в классе Quad make_valid_polygon
 def arrange_vertexes(e1, e2, vertexes):
     a1 = e1[0], e1[1]
     b1 = e1[2], e1[3]
@@ -101,6 +222,7 @@ def arrange_vertexes(e1, e2, vertexes):
         return a1, b1, b2, a2
 
 
+# todo переделать для Edge
 def handle_edges(e1, e2, v, poly, e_full, vertexes):
     e_full[e1] = "bound"
     e_full[e2] = "bound"
@@ -117,6 +239,8 @@ def handle_edges(e1, e2, v, poly, e_full, vertexes):
                 e_full[e] = "inner"
 
 
+# todo переделать для Edge
+# вопрос в необходимости
 def make_edge(bn, ed):
     mn = min(bn, ed)
     mx = max(bn, ed)
@@ -127,6 +251,7 @@ def make_edge(bn, ed):
     return mn[0], mn[1], mx[0], mx[1]
 
 
+# todo переделать для Edge
 def get_second_points(point, e_full):
     points = [(i[0], i[1]) for i in e_full if e_full[i] == "edge"
               and (i[0], i[1]) != point and (i[2], i[3]) == point] \
