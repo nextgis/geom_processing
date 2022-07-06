@@ -159,7 +159,7 @@ def handle_quads(e1, e2, quads, e_full, vertexes, united):
     to_remove = [q for q in quads
                  if e_full[q[0][0]] in ("inner", "secant")
                  or e_full[q[0][1]] in ("inner", "secant")
-                 or (q[0] in united and q[2] in united)]
+                 or (q[0][0][0] in united and q[0][0][2] in united)]
     for item in to_remove:
         quads.remove(item)
     for e in e1, e2:
@@ -179,8 +179,8 @@ def get_bridges(vertexes, e_full, quad, nm):
         poly = Polygon([vertexes[v[0][0]][v[0][1]], vertexes[v[1][0]][v[1][1]],
                         vertexes[v[2][0]][v[2][1]], vertexes[v[3][0]][v[3][1]]])
         bridges.append(poly)
-        united.add(v[0])
-        united.add(v[3])
+        united.add(v[0][0])
+        united.add(v[1][0])
         handle_edges(e1, e2, v, poly, e_full, vertexes)
         handle_quads(e1, e2, q_sorted, e_full, vertexes, united)
     return bridges
