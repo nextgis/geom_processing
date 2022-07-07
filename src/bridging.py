@@ -204,7 +204,7 @@ def get_quads(edges, vertexes):
             line_n = neighbour.make_line(vertexes)
             condition2 = not line_n.intersects(line_e)
             if condition1 and condition2:
-                neighbour = edges[edges.index(neighbour)] # чтобы status не unknown
+                neighbour = edges[edges.index(neighbour)]  # чтобы status не unknown
                 qd = Quad(edge, neighbour)
                 quads.append(qd)
     return quads
@@ -238,20 +238,22 @@ def get_second_points(point, e_full):
     return points
 
 
-def form_quads(e, quads, e_full):
-    e_b = (e.b_poly, e.b_vertex, e.b_poly_size)
-    e_e = (e.e_poly, e.e_vertex, e.e_poly_size)
+def form_quads(edge, quads, e_full):
+    e_b = (edge.b_poly, edge.b_vertex, edge.b_poly_size)
+    e_e = (edge.e_poly, edge.e_vertex, edge.e_poly_size)
     b_points = get_second_points(e_b, e_full)
     e_points = get_second_points(e_e, e_full)
     for bn in b_points:
         for ed in e_points:
             to_check = Edge(*min(bn, ed), *max(bn, ed), "unknown")
             if to_check in e_full:
-                to_check = e_full[e_full.index(to_check)] # снова пляски со статусом
+                to_check = e_full[e_full.index(to_check)]  # чтобы status не unknown
                 if to_check.get_status() == "bound":
-                    qd = Quad(e, to_check)
-                    # todo проверка совпадений to_check
-                    quads.append(qd)
+                    b = e_full[e_full.index(Edge(*min(e_b, bn), *max(e_b, bn)))]
+                    e = e_full[e_full.index(Edge(*min(e_e, ed), *max(e_e, ed)))]
+                    qd = Quad(b, e)
+                    if qd not in quads:
+                        quads.append(qd)
 
 
 def handle_quads(item, quads, e_full, vertexes, united):
