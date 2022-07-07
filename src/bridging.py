@@ -210,14 +210,13 @@ def get_quads(edges, vertexes):
     return quads
 
 
-# todo связать qd и e_full
 def handle_edges(qd, e_full, vertexes):
     # должны меняться в e_full
-    qd.e1.set_status = "bound"
-    qd.e2.set_status = "bound"
+    e_full[e_full.index(qd.e1)].set_status = "bound"
+    e_full[e_full(qd.e2)].set_status = "bound"
     bnd = qd.get_other_edges(vertexes)
-    bnd[0] = "inner"
-    bnd[1] = "inner"
+    e_full[e_full.index(bnd[0])] = "inner"
+    e_full[e_full.index(bnd[1])] = "inner"
     for e in e_full:
         if e.get_status() in ("edge", "bound"):
             line = e.make_line(vertexes)
@@ -259,9 +258,8 @@ def handle_quads(item, quads, e_full, vertexes, united):
     to_remove = [q for q in quads
                  if e_full[q.e1] in ("inner", "secant")
                  or e_full[q.e2] in ("inner", "secant")
-                 or (q.e1.b_poly in united and q.e1.e_poly in united
-                     and q.e2.b_poly in united and q.e2.e_poly in united)]
-    # todo разобраться с проверкой топологии
+                 or are_united({q.e1.b_poly, q.e1.e_poly,
+                                q.e2.b_poly, q.e2.e_poly}, united)]
     for item in to_remove:
         quads.remove(item)
     for e in item.e1, item.e2:
@@ -269,16 +267,38 @@ def handle_quads(item, quads, e_full, vertexes, united):
     quads.sort(key=lambda x: x.get_area(vertexes), reverse=True)
 
 
+def are_united(points, united):
+    to_return = 0
+    for topo in united:
+        to_return = to_return or points.issubset(topo)
+    return to_return
+
+
+def handle_topology(item, united):
+    p1b = item.e1.b_poly
+    p1e = item.e1.e_poly
+    p2b = item.e2.b_poly
+    p2e = item.e2.e_poly
+    cur_u = {p1b, p1e, p2b, p2e}
+    cur_inter = []
+    for topo in united:
+        if cur_u.intersection(topo):
+            cur_inter.append(topo)
+            cur_u = cur_u.union(topo)
+    for topo in cur_inter:
+        united.remove(topo)
+    united.append(cur_u)
+
+
 def get_bridges(vertexes, e_full, quad, nm):
     bridges = []
-    united = set()
+    united = []
     q_sorted = sorted(quad, key=lambda x: x.get_area(vertexes), reverse=True)
     for cnt in range(nm):
         item = q_sorted.pop()
         poly = item.make_valid_polygon(vertexes)
         bridges.append(poly)
-        united.add(item.e1.b_poly)
-        united.add(item.e2.e_poly)
+        handle_topology(item, united)
         handle_edges(item, e_full, vertexes)
         handle_quads(item, q_sorted, e_full, vertexes, united)
     return bridges
