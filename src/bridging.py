@@ -32,6 +32,16 @@ class Edge:
     def make_tuple(self):
         return self.b_poly, self.b_vertex, self.e_poly, self.e_vertex
 
+    def update_status(self, e_list, new_status="default"):
+        try:
+            if new_status == "default":
+                new_status = e_list[e_list.index(self)].get_status()
+            else:
+                e_list[e_list.index(self)].set_status(new_status)
+            self.status = new_status
+        except ValueError:
+            pass
+
     def __eq__(self, other):
         s = self.make_tuple()
         o = other.make_tuple()
@@ -171,6 +181,7 @@ def is_secant(line, poly):
     return True
 
 
+# part of build_bridges
 def get_lines(geoms):
     vertexes = [geom.exterior.coords for geom in geoms]
     e_full = []
@@ -194,6 +205,7 @@ def get_lines(geoms):
     return e_full
 
 
+# part of build_bridges
 def get_quads(edges, vertexes):
     quads = []
     for edge in edges:
@@ -204,28 +216,29 @@ def get_quads(edges, vertexes):
             line_n = neighbour.make_line(vertexes)
             condition2 = not line_n.intersects(line_e)
             if condition1 and condition2:
-                neighbour = edges[edges.index(neighbour)]  # чтобы status не unknown
+                neighbour.update_status(edges)
                 qd = Quad(edge, neighbour)
                 quads.append(qd)
     return quads
 
 
+# part of get_bridges
 def handle_edges(qd, e_full, vertexes):
-    # должны меняться в e_full
-    e_full[e_full.index(qd.e1)].set_status = "bound"
-    e_full[e_full(qd.e2)].set_status = "bound"
-    bnd = qd.get_other_edges(vertexes)
-    e_full[e_full.index(bnd[0])] = "inner"
-    e_full[e_full.index(bnd[1])] = "inner"
+    qd.e1.update_status(e_full, "bound")
+    qd.e2.update_status(e_full, "bound")
+    bnds = qd.get_other_edges(vertexes)
+    for bnd in bnds:
+        bnd.update_status(e_full, "inner")
     for e in e_full:
         if e.get_status() in ("edge", "bound"):
             line = e.make_line(vertexes)
-            if is_secant(line, qd.make_valid_poly) and e not in [qd.e1, qd.e2, bnd[0], bnd[1]]:
+            if is_secant(line, qd.make_valid_poly) and e not in [qd.e1, qd.e2, *bnds]:
                 e.set_status("secant")
-            if qd.make_valid_poly.covers(line) and e not in [qd.e1, qd.e2, bnd[0], bnd[1]]:
+            if qd.make_valid_poly.covers(line) and e not in [qd.e1, qd.e2, *bnds]:
                 e.set_status("inner")
 
 
+# part of form_quads
 def get_second_points(point, e_full):
     points = [(i.b_poly, i.b_vertex, i.b_poly_size) for i in e_full
               if i.get_status == "edge"
@@ -238,6 +251,7 @@ def get_second_points(point, e_full):
     return points
 
 
+# part of handle quads
 def form_quads(edge, quads, e_full):
     e_b = (edge.b_poly, edge.b_vertex, edge.b_poly_size)
     e_e = (edge.e_poly, edge.e_vertex, edge.e_poly_size)
@@ -247,15 +261,18 @@ def form_quads(edge, quads, e_full):
         for ed in e_points:
             to_check = Edge(*min(bn, ed), *max(bn, ed), "unknown")
             if to_check in e_full:
-                to_check = e_full[e_full.index(to_check)]  # чтобы status не unknown
+                to_check.update_status(e_full)
                 if to_check.get_status() == "bound":
-                    b = e_full[e_full.index(Edge(*min(e_b, bn), *max(e_b, bn)))]
-                    e = e_full[e_full.index(Edge(*min(e_e, ed), *max(e_e, ed)))]
+                    b = Edge(*min(e_b, bn), *max(e_b, bn), "unknown")
+                    b.update_status(e_full)
+                    e = Edge(*min(e_e, ed), *max(e_e, ed), "unknown")
+                    e.update_status(e_full)
                     qd = Quad(b, e)
                     if qd not in quads:
                         quads.append(qd)
 
 
+# part of get_bridges
 def handle_quads(item, quads, e_full, vertexes, united):
     to_remove = [q for q in quads
                  if e_full[q.e1] in ("inner", "secant")
@@ -269,6 +286,7 @@ def handle_quads(item, quads, e_full, vertexes, united):
     quads.sort(key=lambda x: x.get_area(vertexes), reverse=True)
 
 
+# part of handle_quads
 def are_united(points, united):
     to_return = 0
     for topo in united:
@@ -276,6 +294,7 @@ def are_united(points, united):
     return to_return
 
 
+# part of get_bridges
 def handle_topology(item, united):
     p1b = item.e1.b_poly
     p1e = item.e1.e_poly
@@ -292,6 +311,7 @@ def handle_topology(item, united):
     united.append(cur_u)
 
 
+# part of get_bridges
 def get_bridges(vertexes, e_full, quad, nm):
     bridges = []
     united = []
