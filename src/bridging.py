@@ -5,6 +5,12 @@ from shapely.ops import unary_union
 class Edge:
     def __init__(self, b_poly, b_vertex, b_poly_size,
                  e_poly, e_vertex, e_poly_size, status):
+        if (b_poly, b_vertex) > (e_poly, e_vertex) \
+                and not (b_poly == e_poly and e_vertex == 0 and b_vertex != 1) \
+                or (b_poly == e_poly and b_vertex == 0 and e_vertex != 1):
+            b_poly, e_poly = e_poly, b_poly
+            b_vertex, e_vertex = e_vertex, b_vertex
+            b_poly_size, e_poly_size = e_poly_size, b_poly_size
         self.b_poly = b_poly
         self.b_vertex = b_vertex
         self.e_poly = e_poly
@@ -253,28 +259,33 @@ def get_second_points(point, e_full):
 
 
 # part of handle quads
-def form_quads(edge, quads, e_full):
+def form_quads(edge, quads, e_full, vertexes):
     e_b = (edge.b_poly, edge.b_vertex, edge.b_poly_size)
     e_e = (edge.e_poly, edge.e_vertex, edge.e_poly_size)
     b_points = get_second_points(e_b, e_full)
     e_points = get_second_points(e_e, e_full)
     for bn in b_points:
         for ed in e_points:
-            to_check = Edge(*min(bn, ed), *max(bn, ed), "unknown")
+            to_check = Edge(*bn, *ed, "unknown")
+            #print(to_check.b_poly, to_check.b_vertex, to_check.e_poly, to_check.e_vertex)
             if to_check in e_full:  # что-то не так
                 to_check.update_status(e_full)
                 if to_check.get_status() == "bound":
-                    b = Edge(*min(e_b, bn), *max(e_b, bn), "unknown")
+                    b = Edge(*bn, *e_b, "unknown")
                     b.update_status(e_full)
-                    e = Edge(*min(e_e, ed), *max(e_e, ed), "unknown")
+                    e = Edge(*ed, *e_e, "unknown")
                     e.update_status(e_full)
-                    qd = Quad(b, e)
-                    if qd not in quads:
-                        quads.append(qd)
+                    if not b.make_line(vertexes).intersects(e.make_line(vertexes)):
+                        qd = Quad(b, e)
+                        if qd not in quads:
+                            quads.append(qd)
 
 
 # part of get_bridges
 def handle_quads(qd, quads, e_full, vertexes, united):
+    for q in quads:  # не зависит в handle_edges
+        q.e1.update_status(e_full)
+        q.e2.update_status(e_full)
     to_remove = [q for q in quads
                  if q.e1.get_status() in ("inner", "secant")
                  or q.e2.get_status() in ("inner", "secant")
@@ -283,7 +294,7 @@ def handle_quads(qd, quads, e_full, vertexes, united):
     for item in to_remove:
         quads.remove(item)
     for e in qd.e1, qd.e2:
-        form_quads(e, quads, e_full)
+        form_quads(e, quads, e_full, vertexes)
     quads.sort(key=lambda x: x.get_area(vertexes), reverse=True)
 
 

@@ -161,7 +161,7 @@ class TestBridging(unittest.TestCase):
                  Edge(1, 0, 3, 2, 0, 3, 'secant'), Edge(1, 0, 3, 2, 2, 3, 'edge'),
                  Edge(1, 2, 3, 2, 0, 3, 'secant'), Edge(1, 2, 3, 2, 2, 3, 'edge')]
         handle_quads(item, quads, edges, vertexes, united)
-        correct = [Quad(Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge"))]
+        correct = [Quad(Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge"))]
         self.assertEqual(quads, correct)
 
     def test_get_bridges(self):
