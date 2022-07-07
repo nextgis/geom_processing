@@ -20,11 +20,11 @@ class TestBridging(unittest.TestCase):
         self.assertFalse(is_free(line, mp.geoms))
 
     def test_get_neighbours(self):
-        edge = (0, 0, 3, 5)
-        size1 = 3
-        size2 = 6
-        neighbours = get_neighbours(edge, size1, size2)
-        self.assertEqual(neighbours, [(0, 2, 3, 4), (0, 2, 3, 0), (0, 1, 3, 4), (0, 1, 3, 0)])
+        edge = Edge(b_poly=0, b_vertex=0, b_poly_size=3,
+                    e_poly=3, e_vertex=5, e_poly_size=6, status="unknown")
+        neighbours = edge.get_neighbours()
+        self.assertEqual([neighbour.make_tuple() for neighbour in neighbours],
+                         [(0, 2, 3, 4), (0, 2, 3, 0), (0, 1, 3, 4), (0, 1, 3, 0)])
 
     def test_is_secant_touch(self):
         line = wkt.loads("LineString(0 1, 1 3)")
@@ -54,75 +54,134 @@ class TestBridging(unittest.TestCase):
     def test_get_lines(self):
         mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
         res = get_lines(mp.geoms)
-        correct = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'bound', (0, 2, 0, 0): 'bound',
-                   (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
-                   (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'bound',
-                   (0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
-                   (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
-                   (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
-                   (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
-                   (1, 0, 2, 0): 'edge', (1, 0, 2, 2): 'edge',
-                   (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
+        correct = [Edge(0, 0, 3, 0, 1, 3, "bound"), Edge(0, 1, 3, 0, 2, 3, "bound"),
+                   Edge(0, 2, 3, 0, 0, 3, "bound"),
+                   Edge(1, 0, 3, 1, 1, 3, "bound"), Edge(1, 1, 3, 1, 2, 3, "bound"),
+                   Edge(1, 2, 3, 1, 0, 3, "bound"),
+                   Edge(2, 0, 3, 2, 1, 3, "bound"), Edge(2, 1, 3, 2, 2, 3, "bound"),
+                   Edge(2, 2, 3, 2, 0, 3, "bound"),
+                   Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 1, 3, 1, 2, 3, "edge"),
+                   Edge(0, 1, 3, 2, 0, 3, "edge"), Edge(0, 1, 3, 2, 2, 3, "edge"),
+                   Edge(0, 2, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge"),
+                   Edge(0, 2, 3, 2, 0, 3, "edge"), Edge(0, 2, 3, 2, 2, 3, "edge"),
+                   Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 0, 3, 2, 2, 3, "edge"),
+                   Edge(1, 2, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge")]
         self.assertTrue(res == correct)
 
     def test_get_quads(self):
         mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
         vertexes = [geom.exterior.coords for geom in mp.geoms]
-        edges = {(0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
-                 (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
-                 (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
-                 (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
-                 (1, 0, 2, 0): 'edge', (1, 0, 2, 2): 'edge',
-                 (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
+        edges = [Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 1, 3, 1, 2, 3, "edge"),
+                 Edge(0, 1, 3, 2, 0, 3, "edge"), Edge(0, 1, 3, 2, 2, 3, "edge"),
+                 Edge(0, 2, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge"),
+                 Edge(0, 2, 3, 2, 0, 3, "edge"), Edge(0, 2, 3, 2, 2, 3, "edge"),
+                 Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 0, 3, 2, 2, 3, "edge"),
+                 Edge(1, 2, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge")]
         res = get_quads(edges, vertexes)
-        correct = {((0, 1, 1, 0), (0, 2, 1, 2)): 2.0,
-                   ((0, 1, 2, 2), (0, 2, 2, 0)): 2.0,
-                   ((1, 0, 2, 0), (1, 2, 2, 2)): 4.0}
+        correct = [Quad(Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge")),
+                   Quad(Edge(0, 1, 3, 2, 2, 3, "edge"), Edge(0, 2, 3, 2, 0, 3, "edge")),
+                   Quad(Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge"))]
         self.assertEqual(res, correct)
 
-    def test_handle_edges(self):
+    def test_handle_edges_edges(self):
         mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
         vertexes = [geom.exterior.coords for geom in mp.geoms]
-        edges = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'bound', (0, 2, 0, 0): 'bound',
-                 (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
-                 (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'bound',
-                 (0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
-                 (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
-                 (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
-                 (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
-                 (1, 0, 2, 0): 'edge', (1, 0, 2, 2): 'edge',
-                 (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
-        e1 = (0, 1, 2, 2)
-        e2 = (0, 2, 2, 0)
-        v = [(0, 1), (2, 2), (0, 2), (2, 0)]
-        poly = wkt.loads("POLYGON ((0 1, 3 1, 2 0, 1 0, 0 1))")
-        handle_edges(e1, e2, v, poly, edges, vertexes)
-        new_edges = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'inner', (0, 2, 0, 0): 'bound',
-                     (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
-                     (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'inner',
-                     (0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
-                     (0, 1, 2, 0): 'inner', (0, 1, 2, 2): 'bound',
-                     (0, 2, 1, 0): 'secant', (0, 2, 1, 2): 'secant',
-                     (0, 2, 2, 0): 'bound', (0, 2, 2, 2): 'inner',
-                     (1, 0, 2, 0): 'secant', (1, 0, 2, 2): 'edge',
-                     (1, 2, 2, 0): 'secant', (1, 2, 2, 2): 'edge'}
+        edges = [Edge(0, 0, 3, 0, 1, 3, "bound"), Edge(0, 1, 3, 0, 2, 3, "bound"),
+                 Edge(0, 2, 3, 0, 0, 3, "bound"),
+                 Edge(1, 0, 3, 1, 1, 3, "bound"), Edge(1, 1, 3, 1, 2, 3, "bound"),
+                 Edge(1, 2, 3, 1, 0, 3, "bound"),
+                 Edge(2, 0, 3, 2, 1, 3, "bound"), Edge(2, 1, 3, 2, 2, 3, "bound"),
+                 Edge(2, 2, 3, 2, 0, 3, "bound"),
+                 Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 1, 3, 1, 2, 3, "edge"),
+                 Edge(0, 1, 3, 2, 0, 3, "edge"), Edge(0, 1, 3, 2, 2, 3, "edge"),
+                 Edge(0, 2, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge"),
+                 Edge(0, 2, 3, 2, 0, 3, "edge"), Edge(0, 2, 3, 2, 2, 3, "edge"),
+                 Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 0, 3, 2, 2, 3, "edge"),
+                 Edge(1, 2, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge")]
+        qd = Quad(Edge(0, 1, 3, 2, 2, 3, "edge"), Edge(0, 2, 3, 2, 0, 3, "edge"))
+        handle_edges(qd, edges, vertexes)
+        new_edges = [Edge(0, 0, 3, 0, 1, 3, 'bound'), Edge(0, 1, 3, 0, 2, 3, 'inner'),
+                     Edge(0, 2, 3, 0, 0, 3, 'bound'),
+                     Edge(1, 0, 3, 1, 1, 3, 'bound'), Edge(1, 1, 3, 1, 2, 3, 'bound'),
+                     Edge(1, 2, 3, 1, 0, 3, 'bound'),
+                     Edge(2, 0, 3, 2, 1, 3, 'bound'), Edge(2, 1, 3, 2, 2, 3, 'bound'),
+                     Edge(2, 2, 3, 2, 0, 3, 'inner'),
+                     Edge(0, 1, 3, 1, 0, 3, 'edge'), Edge(0, 1, 3, 1, 2, 3, 'edge'),
+                     Edge(0, 1, 3, 2, 0, 3, 'inner'), Edge(0, 1, 3, 2, 2, 3, 'bound'),
+                     Edge(0, 2, 3, 1, 0, 3, 'secant'), Edge(0, 2, 3, 1, 2, 3, 'secant'),
+                     Edge(0, 2, 3, 2, 0, 3, 'bound'), Edge(0, 2, 3, 2, 2, 3, 'inner'),
+                     Edge(1, 0, 3, 2, 0, 3, 'secant'), Edge(1, 0, 3, 2, 2, 3, 'edge'),
+                     Edge(1, 2, 3, 2, 0, 3, 'secant'), Edge(1, 2, 3, 2, 2, 3, 'edge')]
         self.assertTrue(edges == new_edges)
+
+    def test_handle_edges_qd(self):
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
+        vertexes = [geom.exterior.coords for geom in mp.geoms]
+        edges = [Edge(0, 0, 3, 0, 1, 3, "bound"), Edge(0, 1, 3, 0, 2, 3, "bound"),
+                 Edge(0, 2, 3, 0, 0, 3, "bound"),
+                 Edge(1, 0, 3, 1, 1, 3, "bound"), Edge(1, 1, 3, 1, 2, 3, "bound"),
+                 Edge(1, 2, 3, 1, 0, 3, "bound"),
+                 Edge(2, 0, 3, 2, 1, 3, "bound"), Edge(2, 1, 3, 2, 2, 3, "bound"),
+                 Edge(2, 2, 3, 2, 0, 3, "bound"),
+                 Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 1, 3, 1, 2, 3, "edge"),
+                 Edge(0, 1, 3, 2, 0, 3, "edge"), Edge(0, 1, 3, 2, 2, 3, "edge"),
+                 Edge(0, 2, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge"),
+                 Edge(0, 2, 3, 2, 0, 3, "edge"), Edge(0, 2, 3, 2, 2, 3, "edge"),
+                 Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 0, 3, 2, 2, 3, "edge"),
+                 Edge(1, 2, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge")]
+        qd = Quad(Edge(0, 1, 3, 2, 2, 3, "edge"), Edge(0, 2, 3, 2, 0, 3, "edge"))
+        handle_edges(qd, edges, vertexes)
+        new_qd = Quad(Edge(0, 1, 3, 2, 2, 3, "bound"), Edge(0, 2, 3, 2, 0, 3, "bound"))
+        self.assertTrue(qd == new_qd)
+
+    def test_handle_topology(self):
+        item = Quad(Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge"))
+        united = []
+        handle_topology(item, united)
+        correct_united = [{1, 2}]
+        self.assertEqual(united, correct_united)
+
+    def test_handle_quads(self):
+        item = Quad(Edge(0, 1, 3, 2, 2, 3, "bound"), Edge(0, 2, 3, 2, 0, 3, "bound"))
+        quads = [Quad(Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "secant")),
+                 Quad(Edge(1, 0, 3, 2, 0, 3, "secant"), Edge(1, 2, 3, 2, 2, 3, "edge"))]
+        united = [{0, 2}]
+        mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
+        vertexes = [geom.exterior.coords for geom in mp.geoms]
+        edges = [Edge(0, 0, 3, 0, 1, 3, 'bound'), Edge(0, 1, 3, 0, 2, 3, 'inner'),
+                 Edge(0, 2, 3, 0, 0, 3, 'bound'),
+                 Edge(1, 0, 3, 1, 1, 3, 'bound'), Edge(1, 1, 3, 1, 2, 3, 'bound'),
+                 Edge(1, 2, 3, 1, 0, 3, 'bound'),
+                 Edge(2, 0, 3, 2, 1, 3, 'bound'), Edge(2, 1, 3, 2, 2, 3, 'bound'),
+                 Edge(2, 2, 3, 2, 0, 3, 'inner'),
+                 Edge(0, 1, 3, 1, 0, 3, 'edge'), Edge(0, 1, 3, 1, 2, 3, 'edge'),
+                 Edge(0, 1, 3, 2, 0, 3, 'inner'), Edge(0, 1, 3, 2, 2, 3, 'bound'),
+                 Edge(0, 2, 3, 1, 0, 3, 'secant'), Edge(0, 2, 3, 1, 2, 3, 'secant'),
+                 Edge(0, 2, 3, 2, 0, 3, 'bound'), Edge(0, 2, 3, 2, 2, 3, 'inner'),
+                 Edge(1, 0, 3, 2, 0, 3, 'secant'), Edge(1, 0, 3, 2, 2, 3, 'edge'),
+                 Edge(1, 2, 3, 2, 0, 3, 'secant'), Edge(1, 2, 3, 2, 2, 3, 'edge')]
+        handle_quads(item, quads, edges, vertexes, united)
+        correct = [Quad(Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge"))]
+        self.assertEqual(quads, correct)
 
     def test_get_bridges(self):
         mp = wkt.loads("MultiPolygon(((0 0, 0 1, 1 0, 0 0)),((0 2, 0 3, 1 3, 0 2)),((2 0, 3 0, 3 1, 2 0)))")
         vertexes = [geom.exterior.coords for geom in mp.geoms]
-        edges = {(0, 0, 0, 1): 'bound', (0, 1, 0, 2): 'bound', (0, 2, 0, 0): 'bound',
-                 (1, 0, 1, 1): 'bound', (1, 1, 1, 2): 'bound', (1, 2, 1, 0): 'bound',
-                 (2, 0, 2, 1): 'bound', (2, 1, 2, 2): 'bound', (2, 2, 2, 0): 'bound',
-                 (0, 1, 1, 0): 'edge', (0, 1, 1, 2): 'edge',
-                 (0, 1, 2, 0): 'edge', (0, 1, 2, 2): 'edge',
-                 (0, 2, 1, 0): 'edge', (0, 2, 1, 2): 'edge',
-                 (0, 2, 2, 0): 'edge', (0, 2, 2, 2): 'edge',
-                 (1, 0, 2, 0): 'edge', (1, 0, 2, 2): 'edge',
-                 (1, 2, 2, 0): 'edge', (1, 2, 2, 2): 'edge'}
-        quads = {((0, 1, 1, 0), (0, 2, 1, 2)): 2.0,
-                 ((0, 1, 2, 2), (0, 2, 2, 0)): 2.0,
-                 ((1, 0, 2, 0), (1, 2, 2, 2)): 4.0}
+        edges = [Edge(0, 0, 3, 0, 1, 3, "bound"), Edge(0, 1, 3, 0, 2, 3, "bound"),
+                 Edge(0, 2, 3, 0, 0, 3, "bound"),
+                 Edge(1, 0, 3, 1, 1, 3, "bound"), Edge(1, 1, 3, 1, 2, 3, "bound"),
+                 Edge(1, 2, 3, 1, 0, 3, "bound"),
+                 Edge(2, 0, 3, 2, 1, 3, "bound"), Edge(2, 1, 3, 2, 2, 3, "bound"),
+                 Edge(2, 2, 3, 2, 0, 3, "bound"),
+                 Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 1, 3, 1, 2, 3, "edge"),
+                 Edge(0, 1, 3, 2, 0, 3, "edge"), Edge(0, 1, 3, 2, 2, 3, "edge"),
+                 Edge(0, 2, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge"),
+                 Edge(0, 2, 3, 2, 0, 3, "edge"), Edge(0, 2, 3, 2, 2, 3, "edge"),
+                 Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 0, 3, 2, 2, 3, "edge"),
+                 Edge(1, 2, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge")]
+        quads = [Quad(Edge(0, 1, 3, 1, 0, 3, "edge"), Edge(0, 2, 3, 1, 2, 3, "edge")),
+                 Quad(Edge(0, 1, 3, 2, 2, 3, "edge"), Edge(0, 2, 3, 2, 0, 3, "edge")),
+                 Quad(Edge(1, 0, 3, 2, 0, 3, "edge"), Edge(1, 2, 3, 2, 2, 3, "edge"))]
         res_bridge_wkt = [g.wkt for g in get_bridges(vertexes, edges, quads, 2)]
         correct_wkt = ['POLYGON ((0 1, 3 1, 2 0, 1 0, 0 1))', 'POLYGON ((0 1, 0 2, 1 3, 3 1, 0 1))']
         self.assertEqual(res_bridge_wkt, correct_wkt)

@@ -21,7 +21,7 @@ class Edge:
 
     def make_line(self, vertexes):
         return LineString([vertexes[self.b_poly][self.b_vertex],
-                           vertexes[self.e_poly]][self.e_vertex])
+                           vertexes[self.e_poly][self.e_vertex]])
 
     def get_neighbours(self):
         return [Edge(self.b_poly, (self.b_vertex + b_shift) % self.b_poly_size, self.b_poly_size,
@@ -108,9 +108,9 @@ class Quad:
                             vertexes[self.e2.e_poly][self.e2.e_vertex]])
         else:
             return Polygon([vertexes[self.e1.b_poly][self.e1.b_vertex],
-                            vertexes[self.e2.b_poly][self.e2.b_vertex],
                             vertexes[self.e1.e_poly][self.e1.e_vertex],
-                            vertexes[self.e2.e_poly][self.e2.e_vertex]])
+                            vertexes[self.e2.e_poly][self.e2.e_vertex],
+                            vertexes[self.e2.b_poly][self.e2.b_vertex]])
 
     def get_area(self, vertexes):
         return self.make_valid_polygon(vertexes).area
@@ -210,7 +210,7 @@ def get_quads(edges, vertexes):
     quads = []
     for edge in edges:
         line_e = edge.make_line(vertexes)
-        neighbours = edge.get_neighbours(edge.b_poly_size, edge.e_poly_size)
+        neighbours = edge.get_neighbours()
         for neighbour in neighbours:
             condition1 = neighbour in edges
             line_n = neighbour.make_line(vertexes)
@@ -218,7 +218,8 @@ def get_quads(edges, vertexes):
             if condition1 and condition2:
                 neighbour.update_status(edges)
                 qd = Quad(edge, neighbour)
-                quads.append(qd)
+                if qd not in quads:
+                    quads.append(qd)
     return quads
 
 
@@ -232,16 +233,16 @@ def handle_edges(qd, e_full, vertexes):
     for e in e_full:
         if e.get_status() in ("edge", "bound"):
             line = e.make_line(vertexes)
-            if is_secant(line, qd.make_valid_poly) and e not in [qd.e1, qd.e2, *bnds]:
+            if is_secant(line, qd.make_valid_polygon(vertexes)) and e not in [qd.e1, qd.e2, *bnds]:
                 e.set_status("secant")
-            if qd.make_valid_poly.covers(line) and e not in [qd.e1, qd.e2, *bnds]:
+            if qd.make_valid_polygon(vertexes).covers(line) and e not in [qd.e1, qd.e2, *bnds]:
                 e.set_status("inner")
 
 
 # part of form_quads
 def get_second_points(point, e_full):
     points = [(i.b_poly, i.b_vertex, i.b_poly_size) for i in e_full
-              if i.get_status == "edge"
+              if i.get_status() == "edge"
               and (i.b_poly, i.b_vertex, i.b_poly_size) != point
               and (i.e_poly, i.e_vertex, i.e_poly_size) == point] \
              + [(i.e_poly, i.e_vertex, i.e_poly_size) for i in e_full
@@ -260,7 +261,7 @@ def form_quads(edge, quads, e_full):
     for bn in b_points:
         for ed in e_points:
             to_check = Edge(*min(bn, ed), *max(bn, ed), "unknown")
-            if to_check in e_full:
+            if to_check in e_full:  # что-то не так
                 to_check.update_status(e_full)
                 if to_check.get_status() == "bound":
                     b = Edge(*min(e_b, bn), *max(e_b, bn), "unknown")
@@ -273,15 +274,15 @@ def form_quads(edge, quads, e_full):
 
 
 # part of get_bridges
-def handle_quads(item, quads, e_full, vertexes, united):
+def handle_quads(qd, quads, e_full, vertexes, united):
     to_remove = [q for q in quads
-                 if e_full[q.e1] in ("inner", "secant")
-                 or e_full[q.e2] in ("inner", "secant")
+                 if q.e1.get_status() in ("inner", "secant")
+                 or q.e2.get_status() in ("inner", "secant")
                  or are_united({q.e1.b_poly, q.e1.e_poly,
                                 q.e2.b_poly, q.e2.e_poly}, united)]
     for item in to_remove:
         quads.remove(item)
-    for e in item.e1, item.e2:
+    for e in qd.e1, qd.e2:
         form_quads(e, quads, e_full)
     quads.sort(key=lambda x: x.get_area(vertexes), reverse=True)
 
