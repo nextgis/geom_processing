@@ -267,7 +267,7 @@ def form_quads(edge, quads, e_full, vertexes):
     for bn in b_points:
         for ed in e_points:
             to_check = Edge(*bn, *ed, "unknown")
-            #print(to_check.b_poly, to_check.b_vertex, to_check.e_poly, to_check.e_vertex)
+            # print(to_check.b_poly, to_check.b_vertex, to_check.e_poly, to_check.e_vertex)
             if to_check in e_full:  # что-то не так
                 to_check.update_status(e_full)
                 if to_check.get_status() == "bound":
@@ -352,3 +352,49 @@ def build_bridges(geoms, m):
     to_union = bridges + list(geoms)
     result = unary_union(to_union)
     return result
+
+
+# далее методы для ускорения
+def get_bounds(vertexes):  # вместо get_lines, bounds есть, edges нет, подсписки сразу по топологиям
+    bounds = []
+    n = len(vertexes)
+    for i in range(n):
+        n_i = len(vertexes[i]) - 1
+        cur_poly = []
+        for j in range(n_i):
+            j_e = (j + 1) % n_i
+            line = Edge(i, j, n_i, i, j_e, n_i, "bound")
+            cur_poly.append(line)
+        bounds.append(cur_poly)
+    return bounds
+
+
+# строит кандидаты в мосты по границам
+def get_bounded_quads(bounds, vertexes, geoms):
+    quads = []
+    for p1 in range(len(bounds)):
+        for p2 in range(p1 + 1, len(bounds)):
+            quads.append(quads_of_couple(bounds[p1], bounds[p2], vertexes, geoms))
+    return quads
+
+
+# строит кандидты в мосты для двух полигонов
+def quads_of_couple(p1, p2, vertexes, geoms):
+    quads = []
+    for b1 in p1:
+        for b2 in p2:
+            qd = Quad(b1, b2)
+            if not is_bridge(qd, vertexes, geoms):
+                quads.append(qd)
+    return quads
+
+
+# является ли прямоуголньик мостом
+def is_bridge(qd, vertexes, geoms):
+    poly = qd.make_valid_polygon(vertexes)
+    l1 = qd.e1.make_line(vertexes)
+    l2 = qd.e2.make_line(vertexes)
+    d = poly.difference(l1).difference(l2)
+    inters = map(lambda g: not g.intersects(d), list(geoms))
+    return all(inters)
+
