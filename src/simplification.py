@@ -48,8 +48,7 @@ class ChangeList(list):
         self._calc_elem(next_ch)
 
     def get_min(self):
-        return min([item for item in self if item.method in ("convex", "concave")],
-                   key=lambda x: x.area)
+        return min(self, key=lambda x: x.area)
 
     def recalc_min(self):
         self.recalc_elem(self.get_min())
@@ -103,7 +102,7 @@ class ChangeList(list):
             l_next = StraightLine(this_p, next_p)
             new_p = l_next.inter_point(l_prev)
             if new_p:
-                if cls._check_direct(next_p, this_p, new_p):
+                if cls._check_position(next_p, this_p, new_p, prev_p, preprev_p):
                     return new_p
                 else:
                     raise ValueError("No point of intersection on the interesting side.")
@@ -111,19 +110,9 @@ class ChangeList(list):
                 raise ValueError("No point of intersection, edges are ||.")
 
         @staticmethod
-        def _check_direct(next_p, this_p, new_p):
-            EPS = 10e-17
-            direct_x = next_p.x - this_p.x
-            new_direct_x = next_p.x - new_p.x
-            change_direct_x = this_p.x - new_p.x
-            direct_y = next_p.y - this_p.y
-            new_direct_y = next_p.y - new_p.y
-            change_direct_y = this_p.y - new_p.y
-            on_same_line = new_direct_x * direct_y - new_direct_y * direct_x <= EPS\
-                   and change_direct_x * direct_y - change_direct_y * direct_x <= EPS
-            good_order = change_direct_x * new_direct_x >= 0 \
-                         and change_direct_y * new_direct_y >= 0
-            return on_same_line and good_order
+        def _check_position(next_p, this_p, new_p, prev_p, preprev_p):
+            return Polygon([preprev_p, new_p, next_p])\
+                   .covers(Polygon([preprev_p, prev_p, this_p, next_p]))
 
         def update(self, next_ch, elem_ch, prev_ch):
             try:
