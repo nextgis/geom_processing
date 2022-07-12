@@ -1,4 +1,4 @@
-from shapely.geometry import Point, LineString, Polygon
+from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 
 
 class StraightLine:
@@ -37,7 +37,7 @@ class ChangePoint:
 
     @property
     def next_ch(self):
-        return self.next_ch
+        return self._next_ch
 
     @next_ch.setter
     def next_ch(self, next_ch):
@@ -45,11 +45,15 @@ class ChangePoint:
 
     @property
     def prev_ch(self):
-        return self.prev_ch
+        return self._prev_ch
 
     @prev_ch.setter
     def prev_ch(self, prev_ch):
         self._prev_ch = prev_ch
+
+    @property
+    def area(self):
+        return self._area
 
     def calc_change(self, poly):
         try:
@@ -98,7 +102,7 @@ class ChangePoint:
                 self._next_ch.prev_ch(self._prev_ch)
                 self._prev_ch.calc_change(poly)
                 self._next_ch.calc_change(poly)
-                del self # нужно, чтобы его не было и в контейнере
+                del self  # нужно, чтобы его не было и в контейнере
             elif self._method == "convex":
                 preprev_ch = self.prev_ch().prev_ch()
                 convex_point = self._find_convex_point(preprev_ch.point(), self.prev_ch().point(),
@@ -117,6 +121,22 @@ class ChangePoint:
 
 
 class ChangeList(list):
+    def fill(self, geom):
+        prev = ChangePoint(geom[-1])
+        self.append(prev)
+        for point in geom:
+            change = ChangePoint(point)
+            change.prev_ch(prev)
+            prev.next_ch(change)
+            self.append(change)
+            prev = change
+        self.pop()
+        self[0].prev_ch(self[-1])
+        self[-1].next_ch(self[0])
+        for item in self:
+            item.calc_change(Polygon(geom))
+        return self
+
     def polygonize(self):
         return Polygon([item.point() for item in self])
 
@@ -124,20 +144,22 @@ class ChangeList(list):
 def get_changes(geoms):
     changes = []
     for geom in geoms:
-        geom_changes = ChangeList()
-        pairs = list(zip(geom, geom[1:] + geom[:1]))
-        for pair in pairs:
-            pass
+        geom_changes = ChangeList().fill(geom)
+        changes.append(geom_changes)
     return changes
 
 
 def get_min_change(changes):
-    mins = [min(change, key=lambda x: x.cost_area) for change in changes]
-    return min(mins, key=lambda x: x.cost_area)
+    mins = [(min(change, key=lambda x: x.get_area()),
+             changes.index(change)) for change in changes]
+    return min(mins, key=lambda x: x[0].get_area()),
 
 
 def simplify(polygons, m):
     geoms = [list(polygon.exterior.coords) for polygon in polygons]
     changes = get_changes(geoms)
     for cnt in range(len(geoms) - m):
-        cur_min = get_min_change(changes)
+        mch = get_min_change(changes)
+        cur_min = mch[0]
+        cur_min[0].recalc(Polygon(mch[1]))
+    return MultiPolygon([change.polygonize() for change in changes])
