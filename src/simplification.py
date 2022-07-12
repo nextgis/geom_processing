@@ -97,22 +97,33 @@ class ChangeList(list):
                 self._method = "no_method"
                 self._area = float("inf")
 
-        @staticmethod
-        def _find_convex_point(preprev_p, prev_p, this_p, next_p):
+        @classmethod
+        def _find_convex_point(cls, preprev_p, prev_p, this_p, next_p):
             l_prev = StraightLine(preprev_p, prev_p)
             l_next = StraightLine(this_p, next_p)
             new_p = l_next.inter_point(l_prev)
-            direct = ((next_p.x - prev_p.x) * (this_p.y - prev_p.y)
-                      - (next_p.y - prev_p.y) * (this_p.x - prev_p.x))
             if new_p:
-                new_direct = ((next_p.x - preprev_p.x) * (new_p.y - preprev_p.y)
-                              - (next_p.y - preprev_p.y) * (new_p.x - preprev_p.x))
-                if new_direct * direct >= 0:
+                if cls._check_direct(next_p, this_p, new_p):
                     return new_p
                 else:
                     raise ValueError("No point of intersection on the interesting side.")
             else:
                 raise ValueError("No point of intersection, edges are ||.")
+
+        @staticmethod
+        def _check_direct(next_p, this_p, new_p):
+            EPS = 10e-17
+            direct_x = next_p.x - this_p.x
+            new_direct_x = next_p.x - new_p.x
+            change_direct_x = this_p.x - new_p.x
+            direct_y = next_p.y - this_p.y
+            new_direct_y = next_p.y - new_p.y
+            change_direct_y = this_p.y - new_p.y
+            on_same_line = new_direct_x * direct_y - new_direct_y * direct_x <= EPS\
+                   and change_direct_x * direct_y - change_direct_y * direct_x <= EPS
+            good_order = change_direct_x * new_direct_x >= 0 \
+                         and change_direct_y * new_direct_y >= 0
+            return on_same_line and good_order
 
         def update(self, next_ch, elem_ch, prev_ch):
             try:

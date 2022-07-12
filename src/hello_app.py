@@ -5,6 +5,7 @@ from shapely.errors import WKTReadingError
 from src.poly_info import poly_info
 from src.combining import combine
 from src.bridging import build_bridges
+from src.simplification import simplify
 
 app = Flask(__name__)
 
@@ -69,6 +70,25 @@ def bridge_polygons():
             mp = convert_to_mp(req["wkt"])
             m = req["m"]
             geom = build_bridges(mp.geoms, m)
+            geom_wkt = geom.wkt
+            return {'union_wkt': geom_wkt}, 200
+        except ValueError as e:
+            return Response('ValueError: ' + str(e), status=400)
+        except KeyError as e:
+            return Response('KeyError: ' + str(e), status=400)
+    else:
+        return Response('Content-Type not supported!', status=400)
+
+
+@app.route("/Simplify", methods=['POST'])
+def simplify_polygons():
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        try:
+            req = request.json
+            mp = convert_to_mp(req["wkt"])
+            m = req["m"]
+            geom = simplify(mp.geoms, m)
             geom_wkt = geom.wkt
             return {'union_wkt': geom_wkt}, 200
         except ValueError as e:
