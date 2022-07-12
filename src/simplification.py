@@ -139,7 +139,7 @@ def get_changes(geoms):
 
 def get_change_of_min(changes):
     mns = [change.get_min() for change in changes]
-    mn = min(mns)
+    mn = min(mns, key=lambda x: x.area)
     index = mns.index(mn)
     return index
 
