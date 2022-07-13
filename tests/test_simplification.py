@@ -30,6 +30,12 @@ class TestSimplification(unittest.TestCase):
                             "((5 2, 6 4, 4 4, 5 2)))")
         self.assertTrue(res.equals(correct))
 
+    def test_star(self):
+        mp = wkt.loads("MultiPolygon(((1 1, 4 0, 1 -1, 0 -3, -1 -1, -5 0, -1 1, 0 2, 1 1)))")
+        res = simplify(mp.geoms, 3)
+        correct = wkt.loads("MULTIPOLYGON (((0 -3, -5 0, 14.285714285714286 7.714285714285714, 0 -3)))")
+        self.assertTrue(res.equals(correct))
+
 
 if __name__ == '__main__':
     unittest.main()

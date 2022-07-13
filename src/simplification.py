@@ -39,6 +39,7 @@ class ChangeList(list):
     def recalc_elem(self, elem):
         index = self.index(elem)
         next_ch = self[(index + 1) % len(self)]
+        after_next_ch = self[(index + 2) % len(self)]
         prev_ch = self[index - 1]
         preprev_ch = self[index - 2]
         prev_ch.update(next_ch, elem, preprev_ch)
@@ -46,6 +47,7 @@ class ChangeList(list):
         self._calc_elem(preprev_ch)
         self._calc_elem(prev_ch)
         self._calc_elem(next_ch)
+        self._calc_elem(after_next_ch)
 
     def get_min(self):
         return min(self, key=lambda x: x.area)
@@ -92,7 +94,7 @@ class ChangeList(list):
                 else:
                     self._method = "concave"
                     self._area = Polygon([self.point, next_p, prev_p]).area
-            except ValueError:
+            except ValueError as e:
                 self._method = "no_method"
                 self._area = float("inf")
 
@@ -111,14 +113,17 @@ class ChangeList(list):
 
         @staticmethod
         def _check_position(next_p, this_p, new_p, prev_p, preprev_p):
-            return Polygon([preprev_p, new_p, next_p])\
-                   .covers(Polygon([preprev_p, prev_p, this_p, next_p]))
+            def are_ordered(a1, a2, a3):
+                return a1 >= a2 and a2 >= a3 or a1 <= a2 and a2 <= a3
+            prev_x = are_ordered(preprev_p.x, prev_p.x, new_p.x)
+            prev_y = are_ordered(preprev_p.y, prev_p.y, new_p.y)
+            next_x = are_ordered(next_p.x, this_p.x, new_p.x)
+            next_y = are_ordered(next_p.y, this_p.y, new_p.y)
+            return prev_x and prev_y and next_x and next_y
 
         def update(self, next_ch, elem_ch, prev_ch):
             try:
-                if self._method == "concave":
-                    self._point = elem_ch.point
-                elif self._method == "convex":
+                if elem_ch.method == "convex":
                     prev_p = prev_ch.point
                     elem_p = elem_ch.point
                     next_p = next_ch.point
