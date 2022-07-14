@@ -1,4 +1,5 @@
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon
+from shapely.ops import unary_union
 
 
 class StraightLine:
@@ -157,3 +158,19 @@ def simplify(polygons, m):
         index = get_change_of_min(changes)
         changes[index].recalc_min()
     return MultiPolygon([change.polygonize() for change in changes])
+
+
+# use buffer with rad, then simplify with tolerance = rad
+def buffer_simplify(mp, m):
+    buffer_rad = mp.length/vertex_in_mp(mp)
+    buffers = [poly.buffer(buffer_rad) for poly in mp.geoms]
+    tol = buffer_rad / 1
+    inters = [buf.simplify(tol) for buf in buffers]
+    res_mp = unary_union(inters)
+    return res_mp
+
+
+def vertex_in_mp(mp):
+    return sum([len(poly.exterior.coords)
+                + sum([len(interior.coords) for interior in poly.interiors])
+                for poly in mp.geoms])

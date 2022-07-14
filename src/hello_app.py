@@ -5,7 +5,7 @@ from shapely.errors import WKTReadingError
 from src.poly_info import poly_info
 from src.combining import combine
 from src.bridging import build_bridges
-from src.simplification import simplify
+from src.simplification import simplify, buffer_simplify
 
 app = Flask(__name__)
 
@@ -88,7 +88,7 @@ def simplify_polygons():
             req = request.json
             mp = convert_to_mp(req["wkt"])
             m = req["m"]
-            geom = simplify(mp.geoms, m)
+            geom = buffer_simplify(mp, m)
             geom_wkt = geom.wkt
             return {'union_wkt': geom_wkt}, 200
         except ValueError as e:
