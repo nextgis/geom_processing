@@ -1,5 +1,8 @@
+import math
+
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 from shapely.ops import unary_union
+from math import cos, sin, tan
 
 
 class StraightLine:
@@ -116,6 +119,7 @@ class ChangeList(list):
         def _check_position(next_p, this_p, new_p, prev_p, preprev_p):
             def are_ordered(a1, a2, a3):
                 return a1 >= a2 and a2 >= a3 or a1 <= a2 and a2 <= a3
+
             prev_x = are_ordered(preprev_p.x, prev_p.x, new_p.x)
             prev_y = are_ordered(preprev_p.y, prev_p.y, new_p.y)
             next_x = are_ordered(next_p.x, this_p.x, new_p.x)
@@ -162,15 +166,26 @@ def simplify(polygons, m):
 
 # use buffer with rad, then simplify with tolerance = rad
 def buffer_simplify(mp, m):
-    buffer_rad = mp.length/vertex_in_mp(mp)
-    buffers = [poly.buffer(buffer_rad) for poly in mp.geoms]
-    tol = buffer_rad / 1
-    inters = [buf.simplify(tol) for buf in buffers]
+    n = vertex_in_mp(mp)
+    # buffer_rad = mp.length / (m * sin(math.pi / m) * 2) * (1 - cos(math.pi * 2 / m))
+    # buffers = [poly.buffer(buffer_rad) for poly in mp.geoms]
+    # tol = buffer_rad
+    buffer_rads = [((1 - cos(math.pi * 2 / vertex_in_mp(p) * n / m))
+                    * (max(p.bounds[2] - p.bounds[0], p.bounds[3] - p.bounds[1]) / 2))
+                   for p in mp.geoms]
+    buffers = [poly.buffer(buffer_rad) for (poly, buffer_rad) in zip(mp.geoms, buffer_rads)]
+    tols = buffer_rads
+    inters = [buf.simplify(tol) for (buf, tol) in zip(buffers, tols)]
     res_mp = unary_union(inters)
+    print(vertex_in_mp(res_mp))
     return res_mp
 
 
 def vertex_in_mp(mp):
-    return sum([len(poly.exterior.coords)
-                + sum([len(interior.coords) for interior in poly.interiors])
-                for poly in mp.geoms])
+    if mp.geom_type == "MultiPolygon":
+        return sum([len(poly.exterior.coords)
+                    + sum([len(interior.coords) for interior in poly.interiors])
+                    for poly in mp.geoms])
+    elif mp.geom_type == "Polygon":
+        return len(mp.exterior.coords) \
+               + sum([len(interior.coords) for interior in mp.interiors])
