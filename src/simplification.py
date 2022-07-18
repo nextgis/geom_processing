@@ -165,20 +165,41 @@ def simplify(polygons, m):
 
 
 # use buffer with rad, then simplify with tolerance = rad
-def buffer_simplify(mp, m):
+def buffer_simplify(mp, m, am_iter=1000):
+    # cur_rad = mp.length / (m * sin(math.pi / m) * 2) * (1 - cos(math.pi * 2 / m))
     n = vertex_in_mp(mp)
-    # buffer_rad = mp.length / (m * sin(math.pi / m) * 2) * (1 - cos(math.pi * 2 / m))
-    # buffers = [poly.buffer(buffer_rad) for poly in mp.geoms]
-    # tol = buffer_rad
-    buffer_rads = [((1 - cos(math.pi * 2 / vertex_in_mp(p) * n / m))
-                    * (max(p.bounds[2] - p.bounds[0], p.bounds[3] - p.bounds[1]) / 2))
-                   for p in mp.geoms]
-    buffers = [poly.buffer(buffer_rad) for (poly, buffer_rad) in zip(mp.geoms, buffer_rads)]
-    tols = buffer_rads
-    inters = [buf.simplify(tol) for (buf, tol) in zip(buffers, tols)]
-    res_mp = unary_union(inters)
-    print(vertex_in_mp(res_mp))
-    return res_mp
+    if am_iter < 1:
+        raise ValueError("Negative amount of iterations is incorrect")
+    if m >= n:
+        raise ValueError("Expected amount of vertexes is more then actual")
+    cur_rad = get_init_rad(mp)
+    cur_ver = 0
+    res_mp = Polygon().empty()
+    prev_mp = Polygon().empty()
+    cnt = 0
+    while cur_ver < m and cnt < am_iter:
+        cur_rad *= 0.5
+        prev_mp = res_mp
+        res_mp = calc_mp(cur_rad, mp)
+        cur_ver = vertex_in_mp(res_mp)
+        cnt += 1
+    if prev_mp.is_empty:
+        raise ValueError(f"Couldn't simplify to {m} vertexes")
+    return prev_mp
+
+
+def get_init_rad(mp):
+    bnds = mp.bounds
+    w = bnds[2] - bnds[0]
+    h = bnds[3] - bnds[1]
+    return max(w, h) / 2
+
+
+def calc_mp(cur_rad, mp):
+    buffers = [poly.buffer(cur_rad) for poly in mp.geoms]
+    tol = cur_rad
+    simple = [buf.simplify(tol) for buf in buffers]
+    return unary_union(simple)
 
 
 def vertex_in_mp(mp):
