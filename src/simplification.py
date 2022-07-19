@@ -184,6 +184,7 @@ def buffer_simplify(mp, m, am_iter=1000):
         res_mp = calc_mp(cur_rad, mp)
         prev_ver = cur_ver
         cur_ver = vertex_in_mp(res_mp)
+        print(prev_ver, cur_ver)
         if prev_ver >= cur_ver:
             reverse_cnt += 1
             if reverse_cnt > 3:
@@ -195,7 +196,8 @@ def buffer_simplify(mp, m, am_iter=1000):
 
 
 def get_init_rad(mp, m):
-    calc_rad = mp.length / (2 * sin(math.pi / m)) * (1 - cos(math.pi * 2 / m)) * 200/m
+    n = vertex_in_mp(mp)
+    calc_rad = n * math.pi / m**2
     return calc_rad
 
 
