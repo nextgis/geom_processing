@@ -172,7 +172,7 @@ def buffer_simplify(mp, m, am_iter=1000):
         raise ValueError("Negative amount of iterations is incorrect")
     if m >= n:
         raise ValueError("Expected amount of vertexes is more then actual")
-    cur_rad = get_init_rad(mp)
+    cur_rad = get_init_rad(mp, m)
     cur_ver = 0
     res_mp = Polygon().empty()
     prev_mp = Polygon().empty()
@@ -183,16 +183,16 @@ def buffer_simplify(mp, m, am_iter=1000):
         res_mp = calc_mp(cur_rad, mp)
         cur_ver = vertex_in_mp(res_mp)
         cnt += 1
+        print(cur_ver)
     if prev_mp.is_empty:
         raise ValueError(f"Couldn't simplify to {m} vertexes")
     return prev_mp
 
 
-def get_init_rad(mp):
-    bnds = mp.bounds
-    w = bnds[2] - bnds[0]
-    h = bnds[3] - bnds[1]
-    return max(w, h) / 2
+def get_init_rad(mp, m):
+    n =  vertex_in_mp(mp)
+    calc_rad = mp.length / (2 * sin(math.pi / m)) * (1 - cos(math.pi * 2 / m)) * 200/m
+    return calc_rad
 
 
 def calc_mp(cur_rad, mp):
