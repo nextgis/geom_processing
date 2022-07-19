@@ -2,7 +2,7 @@ import math
 
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 from shapely.ops import unary_union
-from math import cos, sin, tan
+from math import pi
 
 
 class StraightLine:
@@ -184,20 +184,22 @@ def buffer_simplify(mp, m, am_iter=1000):
         res_mp = calc_mp(cur_rad, mp)
         prev_ver = cur_ver
         cur_ver = vertex_in_mp(res_mp)
-        print(prev_ver, cur_ver)
-        if prev_ver >= cur_ver:
+        if prev_ver > cur_ver:
             reverse_cnt += 1
             if reverse_cnt > 3:
                 raise ValueError("Error of simplification.")
         cnt += 1
-    if prev_mp.is_empty:
+    if prev_mp.is_empty and cur_ver != m:
         raise ValueError(f"Couldn't simplify to {m} vertexes")
+    if cur_ver == m:
+        return res_mp
     return prev_mp
 
 
 def get_init_rad(mp, m):
     n = vertex_in_mp(mp)
-    calc_rad = n * math.pi / m**2
+    cmp = mp.length / 2
+    calc_rad = n * pi / m**2 * cmp
     return calc_rad
 
 
