@@ -1,8 +1,4 @@
-import math
-
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon
-from shapely.ops import unary_union
-from math import pi
 
 
 class StraightLine:
@@ -98,7 +94,7 @@ class ChangeList(list):
                 else:
                     self._method = "concave"
                     self._area = Polygon([self.point, next_p, prev_p]).area
-            except ValueError as e:
+            except ValueError:
                 self._method = "no_method"
                 self._area = float("inf")
 
@@ -118,7 +114,7 @@ class ChangeList(list):
         @staticmethod
         def _check_position(next_p, this_p, new_p, prev_p, preprev_p):
             def are_ordered(a1, a2, a3):
-                return a1 >= a2 and a2 >= a3 or a1 <= a2 and a2 <= a3
+                return a1 >= a2 >= a3 or a1 <= a2 <= a3
 
             prev_x = are_ordered(preprev_p.x, prev_p.x, new_p.x)
             prev_y = are_ordered(preprev_p.y, prev_p.y, new_p.y)
@@ -162,59 +158,3 @@ def simplify(polygons, m):
         index = get_change_of_min(changes)
         changes[index].recalc_min()
     return MultiPolygon([change.polygonize() for change in changes])
-
-
-# use buffer with rad, then simplify with tolerance = rad
-def buffer_simplify(mp, m, am_iter=1000):
-    # cur_rad = mp.length / (m * sin(math.pi / m) * 2) * (1 - cos(math.pi * 2 / m))
-    n = vertex_in_mp(mp)
-    if am_iter < 1:
-        raise ValueError("Negative amount of iterations is incorrect")
-    if m >= n:
-        raise ValueError("Expected amount of vertexes is more then actual")
-    cur_rad = get_init_rad(mp, m)
-    cur_ver = 0
-    res_mp = Polygon([])
-    prev_mp = Polygon([])
-    cnt = 0
-    reverse_cnt = 0
-    while cur_ver < m and cnt < am_iter:
-        cur_rad *= 0.5
-        prev_mp = res_mp
-        res_mp = calc_mp(cur_rad, mp)
-        prev_ver = cur_ver
-        cur_ver = vertex_in_mp(res_mp)
-        if prev_ver > cur_ver:
-            reverse_cnt += 1
-            if reverse_cnt > 3:
-                raise ValueError("Error of simplification.")
-        cnt += 1
-    if prev_mp.is_empty and cur_ver != m:
-        raise ValueError(f"Couldn't simplify to {m} vertexes")
-    if cur_ver == m:
-        return res_mp
-    return prev_mp
-
-
-def get_init_rad(mp, m):
-    n = vertex_in_mp(mp)
-    cmp = mp.length / 2
-    calc_rad = n * pi / m**2 * cmp
-    return calc_rad
-
-
-def calc_mp(cur_rad, mp):
-    buffers = [poly.buffer(cur_rad) for poly in mp.geoms]
-    tol = cur_rad
-    simple = [buf.simplify(tol) for buf in buffers]
-    return unary_union(simple)
-
-
-def vertex_in_mp(mp):
-    if mp.geom_type == "MultiPolygon":
-        return sum([len(poly.exterior.coords)
-                    + sum([len(interior.coords) for interior in poly.interiors])
-                    for poly in mp.geoms])
-    elif mp.geom_type == "Polygon":
-        return len(mp.exterior.coords) \
-               + sum([len(interior.coords) for interior in mp.interiors])

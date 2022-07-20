@@ -1,6 +1,6 @@
 import unittest
 from shapely import wkt
-from src.simplification import *
+from src.change_simplification import *
 
 
 class TestSimplification(unittest.TestCase):

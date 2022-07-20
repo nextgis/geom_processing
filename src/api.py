@@ -5,7 +5,7 @@ from shapely.errors import WKTReadingError
 from src.poly_info import poly_info
 from src.combining import combine
 from src.bridging import build_bridges
-from src.simplification import simplify, buffer_simplify
+from src.buffer_simplification import buffer_simplify
 
 app = Flask(__name__)
 
@@ -61,7 +61,7 @@ def combine_polygons():
         return Response('Content-Type not supported!', status=400)
 
 
-@app.route("/Build_Bridges", methods=['POST'])
+@app.route("/BuildBridges", methods=['POST'])
 def bridge_polygons():
     content_type = request.headers.get('Content-Type')
     if content_type == 'application/json':
@@ -80,7 +80,7 @@ def bridge_polygons():
         return Response('Content-Type not supported!', status=400)
 
 
-@app.route("/Simplify", methods=['POST'])
+@app.route("/SimplifyWithBuffer", methods=['POST'])
 def simplify_polygons():
     content_type = request.headers.get('Content-Type')
     if content_type == 'application/json':
@@ -97,4 +97,3 @@ def simplify_polygons():
             return Response('KeyError: ' + str(e), status=400)
     else:
         return Response('Content-Type not supported!', status=400)
-
