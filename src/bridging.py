@@ -397,4 +397,3 @@ def is_bridge(qd, vertexes, geoms):
     d = poly.difference(l1).difference(l2)
     inters = map(lambda g: not g.intersects(d), list(geoms))
     return all(inters)
-

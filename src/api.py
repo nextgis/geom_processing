@@ -68,10 +68,10 @@ def bridge_polygons():
         try:
             req = request.json
             mp = convert_to_mp(req["wkt"])
-            m = req["m"]
+            m = req["polygons"]
             geom = build_bridges(mp.geoms, m)
             geom_wkt = geom.wkt
-            return {'union_wkt': geom_wkt}, 200
+            return {'bridged_wkt': geom_wkt}, 200
         except ValueError as e:
             return Response('ValueError: ' + str(e), status=400)
         except KeyError as e:
@@ -87,10 +87,10 @@ def simplify_polygons():
         try:
             req = request.json
             mp = convert_to_mp(req["wkt"])
-            m = req["m"]
+            m = req["vertexes"]
             geom = buffer_simplify(mp, m)
             geom_wkt = geom.wkt
-            return {'union_wkt': geom_wkt}, 200
+            return {'simplified_wkt': geom_wkt}, 200
         except ValueError as e:
             return Response('ValueError: ' + str(e), status=400)
         except KeyError as e:
