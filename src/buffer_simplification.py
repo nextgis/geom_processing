@@ -2,13 +2,17 @@ from shapely.geometry import Polygon
 from shapely.ops import unary_union
 from math import pi
 
+# Алгоритм строит буффер, затем упрощает его.
+# Не удается провести соотвествие между требуемым количеством точек и радиусом буффера.
+
 
 def buffer_simplify(mp, m, am_iter=1000):
+    """Simplifies multipolygon using buffer and simplification of it."""
     n = vertex_in_mp(mp)
     if am_iter < 1:
-        raise ValueError("Negative amount of iterations is incorrect")
+        raise ValueError("Negative amount of iterations is incorrect.")
     if m >= n:
-        raise ValueError("Expected amount of vertexes is more then actual")
+        raise ValueError("Expected amount of vertexes is more then actual.")
     cur_rad = get_init_rad(mp, m)
     cur_ver = 0
     res_mp = Polygon([])
@@ -33,7 +37,11 @@ def buffer_simplify(mp, m, am_iter=1000):
     return prev_mp
 
 
+
 def get_init_rad(mp, m):
+    """Selection of the initial radius for the buffer."""
+    # Коэффициент при cmp подобран на основании различных входных данных.
+    # Нет доказательства, что он подходит для всех геометрий.
     n = vertex_in_mp(mp)
     cmp = mp.length / 2
     calc_rad = n * pi / m**2 * cmp
@@ -41,6 +49,7 @@ def get_init_rad(mp, m):
 
 
 def calc_mp(cur_rad, mp):
+    """Gets buffers, simplifies it and returns union multipolygon."""
     buffers = [poly.buffer(cur_rad) for poly in mp.geoms]
     tol = cur_rad
     simple = [buf.simplify(tol) for buf in buffers]
@@ -48,6 +57,7 @@ def calc_mp(cur_rad, mp):
 
 
 def vertex_in_mp(mp):
+    """Calculates amount of vertexes in multipolygon."""
     if mp.geom_type == "MultiPolygon":
         return sum([len(poly.exterior.coords)
                     + sum([len(interior.coords) for interior in poly.interiors])

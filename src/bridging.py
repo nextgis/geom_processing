@@ -2,7 +2,14 @@ from shapely.geometry import LineString, Polygon, MultiPoint, Point
 from shapely.ops import unary_union
 
 
+# Добавляет четырехугольники между исходными полигонами.
+# В текущей реализации алгоритм долго обрабатывает большое число вершин.
+
+
 class Edge:
+    """Keeps information about indexes of two vertexes and its polygons in geometry
+    and position, related to it (status)."""
+
     def __init__(self, b_poly, b_vertex, b_poly_size,
                  e_poly, e_vertex, e_poly_size, status):
         if (b_poly, b_vertex) > (e_poly, e_vertex) \
@@ -80,6 +87,8 @@ class Edge:
 
 
 class Quad:
+    """Keeps information about two Edge instances, which are in quadrilateral-bridge."""
+
     def __init__(self, e1, e2):
         first = min(e1, e2)
         second = max(e1, e2)
@@ -189,6 +198,7 @@ def is_secant(line, poly):
 
 # part of build_bridges
 def get_lines(geoms):
+    """Makes Edge instances from geometry."""
     vertexes = [geom.exterior.coords for geom in geoms]
     e_full = []
     n = len(vertexes)
@@ -213,6 +223,7 @@ def get_lines(geoms):
 
 # part of build_bridges
 def get_quads(edges, vertexes):
+    """Makes Quad instances from list of Edge"""
     quads = []
     for edge in edges:
         line_e = edge.make_line(vertexes)
@@ -231,6 +242,7 @@ def get_quads(edges, vertexes):
 
 # part of get_bridges
 def handle_edges(qd, e_full, vertexes):
+    """Change statuses of Edge in dependence of current geometry."""
     qd.e1.update_status(e_full, "bound")
     qd.e2.update_status(e_full, "bound")
     bnds = qd.get_other_edges(vertexes)
@@ -247,19 +259,21 @@ def handle_edges(qd, e_full, vertexes):
 
 # part of form_quads
 def get_second_points(point, e_full):
-    points = [(i.b_poly, i.b_vertex, i.b_poly_size) for i in e_full
+    """Returns points which have the same Edge with an argument point."""
+    points = ([(i.b_poly, i.b_vertex, i.b_poly_size) for i in e_full
               if i.get_status() == "edge"
               and (i.b_poly, i.b_vertex, i.b_poly_size) != point
-              and (i.e_poly, i.e_vertex, i.e_poly_size) == point] \
-             + [(i.e_poly, i.e_vertex, i.e_poly_size) for i in e_full
-                if i.get_status() == "edge"
-                and (i.b_poly, i.b_vertex, i.b_poly_size) == point
-                and (i.e_poly, i.e_vertex, i.e_poly_size) != point]
+              and (i.e_poly, i.e_vertex, i.e_poly_size) == point]
+              + [(i.e_poly, i.e_vertex, i.e_poly_size) for i in e_full
+                 if i.get_status() == "edge"
+                 and (i.b_poly, i.b_vertex, i.b_poly_size) == point
+                 and (i.e_poly, i.e_vertex, i.e_poly_size) != point])
     return points
 
 
 # part of handle quads
 def form_quads(edge, quads, e_full, vertexes):
+    """Get new Quad instances according to new Edge."""
     e_b = (edge.b_poly, edge.b_vertex, edge.b_poly_size)
     e_e = (edge.e_poly, edge.e_vertex, edge.e_poly_size)
     b_points = get_second_points(e_b, e_full)
@@ -267,8 +281,7 @@ def form_quads(edge, quads, e_full, vertexes):
     for bn in b_points:
         for ed in e_points:
             to_check = Edge(*bn, *ed, "unknown")
-            # print(to_check.b_poly, to_check.b_vertex, to_check.e_poly, to_check.e_vertex)
-            if to_check in e_full:  # что-то не так
+            if to_check in e_full:
                 to_check.update_status(e_full)
                 if to_check.get_status() == "bound":
                     b = Edge(*bn, *e_b, "unknown")
@@ -283,6 +296,7 @@ def form_quads(edge, quads, e_full, vertexes):
 
 # part of get_bridges
 def handle_quads(qd, quads, e_full, vertexes, united):
+    """Removes useless Quad instances and creates new."""
     for q in quads:  # не зависит в handle_edges
         q.e1.update_status(e_full)
         q.e2.update_status(e_full)
@@ -300,6 +314,7 @@ def handle_quads(qd, quads, e_full, vertexes, united):
 
 # part of handle_quads
 def are_united(points, united):
+    """Check if points are in same polygon."""
     to_return = 0
     for topo in united:
         to_return = to_return or points.issubset(topo)
@@ -308,6 +323,7 @@ def are_united(points, united):
 
 # part of get_bridges
 def handle_topology(item, united):
+    """Get state of union of polygons."""
     p1b = item.e1.b_poly
     p1e = item.e1.e_poly
     p2b = item.e2.b_poly
@@ -325,6 +341,7 @@ def handle_topology(item, united):
 
 # part of get_bridges
 def get_bridges(vertexes, e_full, quad, nm):
+    """Get list with quadrilaterals-bridges."""
     bridges = []
     united = []
     q_sorted = sorted(quad, key=lambda x: x.get_area(vertexes), reverse=True)
@@ -354,7 +371,7 @@ def build_bridges(geoms, m):
     return result
 
 
-# далее методы для ускорения
+# Далее функции, с которыми построение "мостов" сможет проходить быстрее.
 def get_bounds(vertexes):  # вместо get_lines, bounds есть, edges нет, подсписки сразу по топологиям
     bounds = []
     n = len(vertexes)
