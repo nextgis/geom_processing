@@ -4,6 +4,8 @@ from shapely import wkt
 from shapely.errors import WKTReadingError
 from src.poly_info import poly_info
 from src.combining import combine
+from src.bridging import build_bridges
+from src.buffer_simplification import buffer_simplify
 
 app = Flask(__name__)
 
@@ -58,3 +60,40 @@ def combine_polygons():
     else:
         return Response('Content-Type not supported!', status=400)
 
+
+@app.route("/BuildBridges", methods=['POST'])
+def bridge_polygons():
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        try:
+            req = request.json
+            mp = convert_to_mp(req["wkt"])
+            m = req["polygons"]
+            geom = build_bridges(mp.geoms, m)
+            geom_wkt = geom.wkt
+            return {'bridged_wkt': geom_wkt}, 200
+        except ValueError as e:
+            return Response('ValueError: ' + str(e), status=400)
+        except KeyError as e:
+            return Response('KeyError: ' + str(e), status=400)
+    else:
+        return Response('Content-Type not supported!', status=400)
+
+
+@app.route("/SimplifyWithBuffer", methods=['POST'])
+def simplify_polygons():
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        try:
+            req = request.json
+            mp = convert_to_mp(req["wkt"])
+            m = req["vertexes"]
+            geom = buffer_simplify(mp, m)
+            geom_wkt = geom.wkt
+            return {'simplified_wkt': geom_wkt}, 200
+        except ValueError as e:
+            return Response('ValueError: ' + str(e), status=400)
+        except KeyError as e:
+            return Response('KeyError: ' + str(e), status=400)
+    else:
+        return Response('Content-Type not supported!', status=400)
